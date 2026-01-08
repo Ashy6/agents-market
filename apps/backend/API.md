@@ -6,6 +6,10 @@
 
 - `http://localhost:3000/api`
 
+线上（自定义域名示例）：
+
+- `https://market-api.singulay.online/api`
+
 说明：
 
 - 为兼容旧调用，`/health` 与 `/chat` 仍可用；推荐统一使用 `/api/*`
@@ -69,7 +73,7 @@ import { DefaultChatTransport, type UIMessage } from 'ai'
 
 const chat = new Chat<UIMessage>({
   transport: new DefaultChatTransport({
-    api: 'http://localhost:3000/api/chat',
+    api: 'https://market-api.singulay.online/api/chat',
   }),
   messages: [],
 })

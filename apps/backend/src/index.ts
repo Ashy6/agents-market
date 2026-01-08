@@ -29,7 +29,18 @@ type ChatRequestBody = {
 
 function getCorsHeaders(request: Request, env: Env): Record<string, string> {
   const requestOrigin = request.headers.get('Origin')
-  const allowedOrigin = env.CORS_ORIGIN || requestOrigin || '*'
+  const allowedOrigins = (env.CORS_ORIGIN || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+  const allowedOrigin =
+    allowedOrigins.length === 0
+      ? requestOrigin || '*'
+      : allowedOrigins.includes('*')
+        ? '*'
+        : requestOrigin && allowedOrigins.includes(requestOrigin)
+          ? requestOrigin
+          : allowedOrigins[0]
 
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
