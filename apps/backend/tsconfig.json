@@ -1,18 +1,12 @@
 {
   "compilerOptions": {
-    "module": "CommonJS",
     "target": "ES2022",
-    "lib": ["ES2022"],
-    "declaration": true,
-    "sourceMap": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "WebWorker"],
+    "types": ["@cloudflare/workers-types", "jest", "node"],
     "strict": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "skipLibCheck": true
   },
   "include": ["src"]
 }
-
