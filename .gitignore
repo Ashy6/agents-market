@@ -4,3 +4,5 @@ node_modules
 .next
 dist
 .env
+apps/backend/.dev.vars
+.wrangler

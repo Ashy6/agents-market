@@ -1,6 +1,6 @@
 # Agents Market（前后端分离版 AI Chat）
 
-本仓库采用「Vite 前端 + NestJS 后端」的前后端分离架构：
+本仓库采用「Vite 前端 + Cloudflare Workers 后端」的前后端分离架构：
 
 - 前端只负责 UI、消息状态、读取流式输出
 - 后端负责鉴权/业务逻辑/调用大模型，并把流通过 HTTP 返回给前端
@@ -8,11 +8,15 @@
 ## 目录结构
 
 - [apps/web](file:///Users/ashy/Documents/code/agents-market/apps/web)：React + Vite 前端（默认 `http://localhost:5173`）
-- [apps/backend](file:///Users/ashy/Documents/code/agents-market/apps/backend)：NestJS 后端（默认 `http://localhost:3000`）
+- [apps/backend](file:///Users/ashy/Documents/code/agents-market/apps/backend)：Cloudflare Workers 后端（本地默认 `http://localhost:3000`）
 
 ## 环境变量
 
-在仓库根目录创建 `.env`（参考 [.env.example](file:///Users/ashy/Documents/code/agents-market/.env.example)）：
+参考 [.env.example](file:///Users/ashy/Documents/code/agents-market/.env.example)。
+
+本地开发（Workers）：在 `apps/backend/.dev.vars` 配置环境变量（wrangler dev 会读取）。
+
+部署到 Cloudflare：使用 `wrangler secret put` 写入敏感变量。
 
 - 火山引擎（默认 provider）：
   - `VOLCENGINE_API_KEY`
@@ -22,8 +26,10 @@
   - `OPENAI_API_KEY`
   - `OPENAI_MODEL_ID`（可选，默认 `gpt-4o-mini`）
 - 后端运行配置：
-  - `BACKEND_PORT`（默认 3000）
   - `CORS_ORIGIN`（默认 `http://localhost:5173`）
+
+- 前端配置：
+  - `VITE_BACKEND_CHAT_API`（可选，前端调用地址覆盖；不配则默认 `http://localhost:3000/chat`）
 
 ## 启动
 
@@ -33,7 +39,7 @@
 npm install
 ```
 
-启动后端（NestJS）：
+启动后端（Workers，本地端口 3000）：
 
 ```bash
 npm run dev:backend
@@ -51,6 +57,14 @@ npm run dev:web
 
 ## API
 
+### GET /health
+
+用于探活。
+
+```bash
+curl http://localhost:3000/health
+```
+
 ### POST /chat
 
 后端接口：`http://localhost:3000/chat`
@@ -59,7 +73,7 @@ npm run dev:web
 
 1. 将 UIMessage 转为模型消息（ModelMessage）
 2. 调用 `streamText`
-3. 使用 `pipeUIMessageStreamToResponse` 以 SSE 形式把 UI message stream 推给前端
+3. 使用 `toUIMessageStreamResponse` 以 SSE 形式把 UI message stream 推给前端
 
 默认行为：
 
@@ -80,11 +94,25 @@ npm run dev:web
 }
 ```
 
+curl 示例：
+
+```bash
+curl -N \
+  -H 'Content-Type: application/json' \
+  -d '{"messages":[{"id":"1","role":"user","parts":[{"type":"text","text":"你好"}]}]}' \
+  http://localhost:3000/chat
+```
+
+返回：
+
+- 成功：SSE 流（AI SDK UI message stream），响应头包含 `x-vercel-ai-ui-message-stream: v1`
+- 失败：JSON `{ "error": "..." }`
+
 ## 常用命令
 
 ```bash
 npm run typecheck:web
 npm run typecheck:backend
 npm run build:web
-npm run build -w apps/backend
+npm run dev:backend
 ```
