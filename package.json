@@ -1,0 +1,17 @@
+{
+  "name": "agents-market",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/web",
+    "apps/backend",
+    "apps/agents"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev -w apps/backend",
+    "dev:web": "npm run dev -w apps/web",
+    "typecheck:backend": "npm run typecheck -w apps/backend",
+    "build:web": "npm run build -w apps/web",
+    "typecheck:web": "npm run typecheck -w apps/web"
+  }
+}
