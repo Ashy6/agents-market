@@ -7,3 +7,4 @@ dist
 .env
 apps/backend/.dev.vars
 .wrangler
+.home
