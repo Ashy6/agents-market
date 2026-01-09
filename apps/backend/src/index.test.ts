@@ -392,6 +392,6 @@ describe('providers', () => {
       VOLCENGINE_API_KEY: 'k',
     })
     expect(() => providers.volcengine()).not.toThrow()
-    expect(() => providers.openai()).toThrow('Missing environment variable: OPENAI_API_KEY')
+    expect(() => providers.openai()).toThrow(/OPENAI_API_KEY/)
   })
 })

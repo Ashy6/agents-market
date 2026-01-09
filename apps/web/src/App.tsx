@@ -21,7 +21,7 @@ type AgentListResponse = {
 }
 
 function App() {
-  const backendApiUrl = import.meta.env?.VITE_BACKEND_CHAT_API || 'http://localhost:3000/api/chat'
+  const backendApiUrl = import.meta.env?.VITE_BACKEND_CHAT_API || '/api/chat'
 
   const [agents, setAgents] = useState<Agent[]>([])
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)

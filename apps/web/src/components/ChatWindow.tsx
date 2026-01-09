@@ -100,7 +100,8 @@ function MessageBubble({ message, onDelete, onRegenerate }: MessageBubbleProps) 
 
   const isUser = message.role === 'user'
   const text = extractMessageText(message.parts)
-  const timestamp = message.createdAt ? new Date(message.createdAt).getTime() : Date.now()
+  const createdAt = (message as UIMessage & { createdAt?: string | number }).createdAt
+  const timestamp = createdAt ? new Date(createdAt).getTime() : Date.now()
 
   const handleCopy = async () => {
     const success = await copyToClipboard(text)

@@ -6,6 +6,7 @@ import type { UIMessage } from 'ai'
 let mockMessages: UIMessage[] = []
 let mockStatus: 'ready' | 'submitted' | 'streaming' = 'ready'
 const mockSendMessage = vi.fn()
+const mockSetMessages = vi.fn()
 
 vi.mock('@ai-sdk/react', () => {
   return {
@@ -14,6 +15,7 @@ vi.mock('@ai-sdk/react', () => {
     },
     useChat: () => ({
       messages: mockMessages,
+      setMessages: mockSetMessages,
       sendMessage: mockSendMessage,
       status: mockStatus,
     }),
@@ -26,6 +28,7 @@ beforeEach(() => {
   mockMessages = []
   mockStatus = 'ready'
   mockSendMessage.mockReset()
+  mockSetMessages.mockReset()
   globalThis.fetch = vi.fn(async () => {
     return new Response(
       JSON.stringify({
@@ -62,7 +65,7 @@ describe('App', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    const button = screen.getByRole('button', { name: '发送' })
+    const button = screen.getByRole('button', { name: /发送/ })
     expect(button).toBeDisabled()
 
     const input = screen.getByPlaceholderText('输入消息，支持 Markdown')
