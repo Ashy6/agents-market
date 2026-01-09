@@ -1,4 +1,9 @@
-import { convertToModelMessages, streamText } from "ai";
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  streamText,
+} from "ai";
 import { AGENT_LIST, getAgentById } from "./data/agents";
 import { MODEL_LIST } from "./data/list";
 import { getModel, type RegistryEnv } from "./lib/ai/registry";
@@ -188,6 +193,38 @@ export async function handleChat(
       { error: "Missing modelId" },
       { status: 400, headers: corsHeaders }
     );
+
+  if (modelId.startsWith("doubao-seedream-")) {
+    const stream = createUIMessageStream({
+      execute: ({ writer }) => {
+        const id =
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+        writer.write({ type: "text-start", id });
+        writer.write({
+          type: "text-delta",
+          id,
+          delta:
+            "你选择的是 Seedream 图像生成模型，它不支持 /api/chat 的对话接口，所以这次请求会失败。\n\n" +
+            "如果你想“AI 绘画创作”，需要走单独的“文生图/图生图”接口（不是 chat completion）。目前这个后端只实现了对话流式接口。\n\n" +
+            "建议：先换用文字类模型（如 deepseek-v3-* 或 gpt-4o*）来生成绘画提示词；等后端加上图像生成接口后，再接入 Seedream。",
+        });
+        writer.write({ type: "text-end", id });
+      },
+    });
+
+    const response = createUIMessageStreamResponse({ stream });
+    const headers = new Headers(response.headers);
+    for (const [key, value] of Object.entries(corsHeaders))
+      headers.set(key, value);
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  }
 
   const modelMessages = await convertToModelMessages(
     body.messages.map(({ id: _id, ...rest }) => rest)

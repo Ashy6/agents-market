@@ -3,6 +3,8 @@ import { jest } from '@jest/globals'
 type MockedAI = {
   streamText: jest.Mock
   convertToModelMessages: jest.Mock
+  createUIMessageStream: jest.Mock
+  createUIMessageStreamResponse: jest.Mock
 }
 
 type MockedRegistry = {
@@ -40,6 +42,8 @@ async function setupWorker(overrides?: {
       toUIMessageStreamResponse: () => makeUiStreamResponse(),
     })),
     convertToModelMessages: jest.fn(async (messages: unknown) => messages),
+    createUIMessageStream: jest.fn(() => new ReadableStream()),
+    createUIMessageStreamResponse: jest.fn(() => makeUiStreamResponse()),
     ...overrides?.ai,
   }
 
@@ -67,6 +71,8 @@ async function setupWorker(overrides?: {
   jest.unstable_mockModule('ai', () => ({
     streamText: ai.streamText,
     convertToModelMessages: ai.convertToModelMessages,
+    createUIMessageStream: ai.createUIMessageStream,
+    createUIMessageStreamResponse: ai.createUIMessageStreamResponse,
   }))
 
   jest.unstable_mockModule('./lib/ai/registry', () => ({
