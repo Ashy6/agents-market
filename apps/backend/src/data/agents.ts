@@ -9,7 +9,14 @@ export type AgentConfig = {
   temperature: number;
 };
 
-export const AGENT_LIST: AgentConfig[] = MODEL_LIST.map((m) => ({
+const SORTED_MODELS: readonly ModelCatalogItem[] = [...MODEL_LIST].sort((a, b) => {
+  const aRank = a.provider === "volcengine" ? 0 : 1;
+  const bRank = b.provider === "volcengine" ? 0 : 1;
+  if (aRank !== bRank) return aRank - bRank;
+  return a.id - b.id;
+});
+
+export const AGENT_LIST: AgentConfig[] = SORTED_MODELS.map((m) => ({
   id: m.modelId,
   name: m.name,
   modelId: m.modelId,

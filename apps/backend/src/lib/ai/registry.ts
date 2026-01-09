@@ -28,7 +28,7 @@ export function getModel(modelId: string, env: RegistryEnv) {
   const { openai, volcengine } = getProviders(env)
 
   if (modelItem.provider === 'openai') {
-    return openai.chat(modelItem.model)
+    return openai().chat(modelItem.model)
   }
 
   const endpointIdEnv = modelItem.volcengine?.endpointIdEnv
@@ -37,5 +37,5 @@ export function getModel(modelId: string, env: RegistryEnv) {
   }
 
   const endpointId = requireEnv(env, endpointIdEnv)
-  return volcengine.chat(endpointId)
+  return volcengine().chat(endpointId)
 }

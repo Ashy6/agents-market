@@ -56,7 +56,9 @@ function App() {
       const data = (await res.json()) as ModelListResponseBody
       if (canceled) return
       setAgents(data.items)
-      setSelectedAgentId((prev) => prev || data.items[0]?.id)
+      setSelectedAgentId(
+        (prev) => prev || data.items.find((a) => a.modelId.startsWith('doubao'))?.id || data.items[0]?.id,
+      )
     })()
 
     return () => {

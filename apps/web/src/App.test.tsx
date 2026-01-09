@@ -52,7 +52,7 @@ describe('App', () => {
     expect(mockSendMessage).toHaveBeenCalledTimes(1)
     expect(mockSendMessage).toHaveBeenCalledWith(
       { text: 'hello' },
-      { body: { agentId: 'gpt-4o' } },
+      { body: { agentId: 'doubao-lite' } },
     )
     expect((input as HTMLInputElement).value).toBe('')
   })

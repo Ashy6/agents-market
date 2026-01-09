@@ -383,3 +383,15 @@ describe('workers backend', () => {
     expect(content).toContain('/api/chat')
   })
 })
+
+describe('providers', () => {
+  test('getProviders does not require OPENAI_API_KEY unless openai is used', async () => {
+    const { getProviders } = await import('./lib/ai/providers')
+    const providers = getProviders({
+      VOLCENGINE_BASE_URL: 'http://example.com',
+      VOLCENGINE_API_KEY: 'k',
+    })
+    expect(() => providers.volcengine()).not.toThrow()
+    expect(() => providers.openai()).toThrow('Missing environment variable: OPENAI_API_KEY')
+  })
+})

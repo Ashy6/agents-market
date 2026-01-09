@@ -8,11 +8,11 @@ export type ProvidersEnv = {
 }
 
 type Providers = {
-  openai: ReturnType<typeof createOpenAI>
-  volcengine: ReturnType<typeof createOpenAI>
+  openai: () => ReturnType<typeof createOpenAI>
+  volcengine: () => ReturnType<typeof createOpenAI>
 }
 
-const cachedProvidersByKey = new Map<string, Providers>()
+const cachedProvidersByKey = new Map<string, { openai?: ReturnType<typeof createOpenAI>; volcengine?: ReturnType<typeof createOpenAI> }>()
 
 function readEnv(env: ProvidersEnv, key: keyof ProvidersEnv & string): string | undefined {
   const fromEnv = env[key]
@@ -33,18 +33,29 @@ export function getProviders(env: ProvidersEnv): Providers {
   const volcKey = readEnv(env, 'VOLCENGINE_API_KEY') || readEnv(env, 'VOLC_API_KEY') || ''
   const cacheKey = `${openaiKey}::${volcBaseURL}::${volcKey}`
   const cached = cachedProvidersByKey.get(cacheKey)
-  if (cached) return cached
+  const cacheEntry = cached ?? {}
+  if (!cached) cachedProvidersByKey.set(cacheKey, cacheEntry)
 
-  const providers: Providers = {
-    openai: createOpenAI({ apiKey: requireEnv(env, 'OPENAI_API_KEY') }),
-    volcengine: createOpenAI({
-      baseURL: volcBaseURL,
-      apiKey: requireEnv(env, (readEnv(env, 'VOLCENGINE_API_KEY') ? 'VOLCENGINE_API_KEY' : 'VOLC_API_KEY') as
-        | 'VOLCENGINE_API_KEY'
-        | 'VOLC_API_KEY'),
-    }),
+  return {
+    openai: () => {
+      if (!cacheEntry.openai) {
+        cacheEntry.openai = createOpenAI({ apiKey: requireEnv(env, 'OPENAI_API_KEY') })
+      }
+      return cacheEntry.openai
+    },
+    volcengine: () => {
+      if (!cacheEntry.volcengine) {
+        cacheEntry.volcengine = createOpenAI({
+          baseURL: volcBaseURL,
+          apiKey: requireEnv(
+            env,
+            (readEnv(env, 'VOLCENGINE_API_KEY') ? 'VOLCENGINE_API_KEY' : 'VOLC_API_KEY') as
+              | 'VOLCENGINE_API_KEY'
+              | 'VOLC_API_KEY',
+          ),
+        })
+      }
+      return cacheEntry.volcengine
+    },
   }
-
-  cachedProvidersByKey.set(cacheKey, providers)
-  return providers
 }
