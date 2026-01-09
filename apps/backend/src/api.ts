@@ -1,6 +1,5 @@
 import { convertToModelMessages, streamText } from "ai";
-import { DEMO_AGENTS, getAgentById } from "./data/agents";
-import { MODEL_LIST } from "./data/list";
+import { AGENT_LIST, getAgentById } from "./data/agents";
 import { getModel, type RegistryEnv } from "./lib/ai/registry";
 import type { ChatRequestBody } from "./types/chat";
 
@@ -14,25 +13,16 @@ export type Env = RegistryEnv & {
   CORS_ORIGIN?: string;
 };
 
-export type ModelListItem = {
-  /**
-   * UI 侧展示/排序使用的数字主键。
-   * 注意：这不是模型调用的标识。
-   */
-  id: number;
-  /**
-   * 前端/接口侧使用的模型标识。
-   * 前端仅需要将该值透传给 /chat。
-   */
+export type AgentListItem = {
+  id: string;
+  name: string;
   modelId: string;
+  systemPrompt: string;
+  temperature: number;
 };
 
-export type ModelListResponseBody = {
-  /**
-   * 后端内置模型列表（来自 MODEL_LIST）。
-   * 前端只需要使用其中的 id 与 modelId。
-   */
-  items: ModelListItem[];
+export type AgentListResponseBody = {
+  items: AgentListItem[];
 };
 
 export function getCorsHeaders(
@@ -73,18 +63,21 @@ export function normalizeTemperature(value: unknown): number | undefined {
   return Math.max(0, Math.min(2, value));
 }
 
-export async function handleModels(
+export async function handleAgents(
   request: Request,
   env: Env
 ): Promise<Response> {
   const corsHeaders = getCorsHeaders(request, env);
 
-  const items: ModelListItem[] = MODEL_LIST.map((m) => ({
-    id: m.id,
-    modelId: m.modelId,
+  const items: AgentListItem[] = AGENT_LIST.map((a) => ({
+    id: a.id,
+    modelId: a.modelId,
+    name: a.name,
+    systemPrompt: a.systemPrompt,
+    temperature: a.temperature,
   }));
 
-  const payload: ModelListResponseBody = { items };
+  const payload: AgentListResponseBody = { items };
   return jsonResponse(payload, { status: 200, headers: corsHeaders });
 }
 
@@ -121,7 +114,7 @@ export async function handleChat(
   const agent = body.agentId
     ? getAgentById(body.agentId)
     : !body.modelId
-    ? DEMO_AGENTS[0]
+    ? AGENT_LIST[0]
     : undefined;
   if (body.agentId && !agent) {
     return jsonResponse(

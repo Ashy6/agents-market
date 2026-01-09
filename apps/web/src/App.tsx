@@ -5,13 +5,16 @@ import ReactMarkdown from 'react-markdown'
 
 type TextPart = Extract<UIMessage['parts'][number], { type: 'text' }>
 
-type ModelListItem = {
-  id: number
+type AgentListItem = {
+  id: string
   modelId: string
+  name: string
+  systemPrompt: string
+  temperature: number
 }
 
 type ModelListResponseBody = {
-  items: ModelListItem[]
+  items: AgentListItem[]
 }
 
 function getTextFromParts(parts: UIMessage['parts']): string {
@@ -23,8 +26,8 @@ function getTextFromParts(parts: UIMessage['parts']): string {
 
 function App() {
   const [input, setInput] = useState('')
-  const [models, setModels] = useState<ModelListItem[]>([])
-  const [selectedModelId, setSelectedModelId] = useState<string | undefined>(undefined)
+  const [agents, setAgents] = useState<AgentListItem[]>([])
+  const [selectedAgentId, setSelectedAgentId] = useState<string | undefined>(undefined)
 
   const chat = useMemo(() => {
     const api = (import.meta as { env?: Record<string, string> }).env?.VITE_BACKEND_CHAT_API
@@ -43,17 +46,17 @@ function App() {
   useEffect(() => {
     const env = (import.meta as { env?: Record<string, string> }).env
     const chatApi = env?.VITE_BACKEND_CHAT_API || 'http://localhost:3000/api/chat'
-    const modelsApi =
-      env?.VITE_BACKEND_MODELS_API || chatApi.replace(/\/chat$/, '/models')
+    const agentsApi =
+      env?.VITE_BACKEND_AGENTS_API || chatApi.replace(/\/chat$/, '/agents')
 
     let canceled = false
     void (async () => {
-      const res = await fetch(modelsApi)
+      const res = await fetch(agentsApi)
       if (!res.ok) throw new Error(await res.text())
       const data = (await res.json()) as ModelListResponseBody
       if (canceled) return
-      setModels(data.items)
-      setSelectedModelId((prev) => prev || data.items[0]?.modelId)
+      setAgents(data.items)
+      setSelectedAgentId((prev) => prev || data.items[0]?.id)
     })()
 
     return () => {
@@ -68,7 +71,7 @@ function App() {
     setInput('')
     void sendMessage(
       { text },
-      selectedModelId ? { body: { modelId: selectedModelId } } : undefined,
+      selectedAgentId ? { body: { agentId: selectedAgentId } } : undefined,
     )
   }
 
@@ -77,23 +80,23 @@ function App() {
       <div className="h-full flex">
         <aside className="w-72 border-r bg-white">
           <div className="px-4 py-3 border-b">
-            <div className="text-sm font-semibold">可用 Models</div>
+            <div className="text-sm font-semibold">可用 Agents</div>
           </div>
           <div className="p-2 space-y-1">
-            {models.map((m) => {
-              const active = m.modelId === selectedModelId
+            {agents.map((m) => {
+              const active = m.id === selectedAgentId
               return (
                 <button
                   key={m.id}
                   type="button"
-                  onClick={() => setSelectedModelId(m.modelId)}
+                  onClick={() => setSelectedAgentId(m.id)}
                   className={
                     'w-full text-left px-3 py-2 rounded-lg border ' +
                     (active ? 'bg-blue-50 border-blue-200' : 'bg-white border-transparent hover:bg-gray-50')
                   }
                 >
-                  <div className="text-sm font-medium">{m.modelId}</div>
-                  <div className="text-xs text-gray-500">modelId: {m.modelId}</div>
+                  <div className="text-sm font-medium">{m.name || m.modelId}</div>
+                  <div className="text-xs text-gray-500">{m.systemPrompt}</div>
                 </button>
               )
             })}
@@ -104,7 +107,7 @@ function App() {
           <header className="px-4 py-3 border-b bg-white flex items-center justify-between">
             <h1 className="text-lg font-semibold">AI Chat</h1>
             <div className="text-sm text-gray-600">
-              当前模型：<span className="font-medium">{selectedModelId || '-'}</span>
+              当前 Agent：<span className="font-medium">{selectedAgentId || '-'}</span>
             </div>
           </header>
           <main className="flex-1 overflow-y-auto p-4 space-y-3">

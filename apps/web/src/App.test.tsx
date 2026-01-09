@@ -30,8 +30,8 @@ beforeEach(() => {
     return new Response(
       JSON.stringify({
         items: [
-          { id: 1, modelId: 'gpt-4o' },
-          { id: 2, modelId: 'doubao-lite' },
+          { id: 'gpt-4o', modelId: 'gpt-4o', name: 'GPT-4o', systemPrompt: 'S', temperature: 0.2 },
+          { id: 'doubao-lite', modelId: 'doubao-lite', name: 'Doubao Lite', systemPrompt: 'S', temperature: 0.3 },
         ],
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } },
@@ -44,7 +44,7 @@ describe('App', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await screen.findAllByText('gpt-4o')
+    await screen.findAllByText('GPT-4o')
     const input = screen.getByPlaceholderText('输入消息，支持 Markdown')
     await user.type(input, 'hello')
     await user.click(screen.getByRole('button', { name: '发送' }))
@@ -52,7 +52,7 @@ describe('App', () => {
     expect(mockSendMessage).toHaveBeenCalledTimes(1)
     expect(mockSendMessage).toHaveBeenCalledWith(
       { text: 'hello' },
-      { body: { modelId: 'gpt-4o' } },
+      { body: { agentId: 'gpt-4o' } },
     )
     expect((input as HTMLInputElement).value).toBe('')
   })

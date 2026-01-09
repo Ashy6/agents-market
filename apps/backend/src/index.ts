@@ -1,11 +1,11 @@
-import { getCorsHeaders, handleChat, handleModels, jsonResponse, type Env } from "./api";
+import { getCorsHeaders, handleAgents, handleChat, jsonResponse, type Env } from "./api";
 
 // Worker 入口（Cloudflare Workers）
 // - GET  /health       健康检查
-// - GET  /models       获取后端内置模型列表（前端只用 id/modelId）
+// - GET  /agents       获取后端内置 agents 列表
 // - POST /chat         发送聊天消息，返回 UI 消息流（SSE）
 //
-// 同时支持 /api 前缀（例如 /api/chat、/api/models）。
+// 同时支持 /api 前缀（例如 /api/chat、/api/agents）。
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -25,12 +25,12 @@ export default {
       return jsonResponse({ ok: true }, { status: 200, headers: corsHeaders });
     }
 
-    if (pathname === "/models" && request.method === "GET") {
+    if (pathname === "/agents" && request.method === "GET") {
       try {
-        return await handleModels(request, env);
+        return await handleAgents(request, env);
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : "Error listing models";
+          error instanceof Error ? error.message : "Error listing agents";
         return jsonResponse(
           { error: message },
           { status: 500, headers: corsHeaders }

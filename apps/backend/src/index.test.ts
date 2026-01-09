@@ -11,7 +11,7 @@ type MockedRegistry = {
 
 type MockedAgents = {
   getAgentById: jest.Mock
-  DEMO_AGENTS: Array<{
+  AGENT_LIST: Array<{
     id: string
     name: string
     modelId: string
@@ -50,7 +50,7 @@ async function setupWorker(overrides?: {
 
   const agents: MockedAgents = {
     getAgentById: jest.fn(() => undefined),
-    DEMO_AGENTS: [
+    AGENT_LIST: [
       {
         id: 'code-assistant',
         name: '代码助手',
@@ -75,7 +75,7 @@ async function setupWorker(overrides?: {
 
   jest.unstable_mockModule('./data/agents', () => ({
     getAgentById: agents.getAgentById,
-    DEMO_AGENTS: agents.DEMO_AGENTS,
+    AGENT_LIST: agents.AGENT_LIST,
   }))
 
   const { default: worker } = await import('./index')
@@ -97,21 +97,25 @@ describe('workers backend', () => {
     await expect(res.json()).resolves.toEqual({ ok: true })
   })
 
-  test('GET /models returns model list', async () => {
+  test('GET /agents returns agents list', async () => {
     const { worker } = await setupWorker()
-    const res = await worker.fetch(new Request('http://localhost/models'), {})
+    const res = await worker.fetch(new Request('http://localhost/agents'), {})
     expect(res.status).toBe(200)
-    const body = (await res.json()) as { items: Array<{ id: number; modelId: string }> }
+    const body = (await res.json()) as {
+      items: Array<{ id: string; modelId: string; name: string; systemPrompt: string; temperature: number }>
+    }
     expect(Array.isArray(body.items)).toBe(true)
     expect(body.items.length).toBeGreaterThan(0)
     expect(body.items.some((i) => i.modelId === 'gpt-4o')).toBe(true)
   })
 
-  test('GET /api/models returns model list', async () => {
+  test('GET /api/agents returns agents list', async () => {
     const { worker } = await setupWorker()
-    const res = await worker.fetch(new Request('http://localhost/api/models'), {})
+    const res = await worker.fetch(new Request('http://localhost/api/agents'), {})
     expect(res.status).toBe(200)
-    const body = (await res.json()) as { items: Array<{ id: number; modelId: string }> }
+    const body = (await res.json()) as {
+      items: Array<{ id: string; modelId: string; name: string; systemPrompt: string; temperature: number }>
+    }
     expect(body.items.some((i) => i.modelId === 'gpt-4o')).toBe(true)
   })
 
@@ -256,10 +260,10 @@ describe('workers backend', () => {
     expect(streamTextArgs.temperature).toBe(0.7)
   })
 
-  test('POST /chat defaults to DEMO_AGENTS[0] when no agentId/modelId', async () => {
+  test('POST /chat defaults to AGENT_LIST[0] when no agentId/modelId', async () => {
     const { worker, ai, registry } = await setupWorker({
       agents: {
-        DEMO_AGENTS: [
+        AGENT_LIST: [
           {
             id: 'code-assistant',
             name: '代码助手',

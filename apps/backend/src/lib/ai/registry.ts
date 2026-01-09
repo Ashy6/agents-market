@@ -1,7 +1,8 @@
-import { getModelCatalogItem, MODEL_CATALOG } from '../../data/list'
+import { getAgentById } from '../../data/agents'
+import { getModelByModelId, listAvailableModelIds, type ModelId } from '../../data/agents'
 import { getProviders, type ProvidersEnv } from './providers'
 
-export type RegistryModelId = keyof typeof MODEL_CATALOG
+export type RegistryModelId = ModelId
 
 export type RegistryEnv = ProvidersEnv & Record<string, string | undefined>
 
@@ -18,14 +19,10 @@ function requireEnv(env: RegistryEnv, key: string): string {
   return value
 }
 
-function availableModelIds(): string {
-  return Object.keys(MODEL_CATALOG).join(', ')
-}
-
 export function getModel(modelId: string, env: RegistryEnv) {
-  const modelItem = getModelCatalogItem(modelId)
+  const modelItem = getModelByModelId(modelId)
   if (!modelItem) {
-    throw new Error(`Unknown modelId: ${modelId}. Available: ${availableModelIds()}`)
+    throw new Error(`Unknown modelId: ${modelId}. Available: ${listAvailableModelIds()}`)
   }
 
   const { openai, volcengine } = getProviders(env)
@@ -36,7 +33,7 @@ export function getModel(modelId: string, env: RegistryEnv) {
 
   const endpointIdEnv = modelItem.volcengine?.endpointIdEnv
   if (!endpointIdEnv) {
-    throw new Error(`Model ${modelId} is missing volcengine.endpointIdEnv in MODEL_CATALOG`)
+    throw new Error(`Model ${modelId} is missing volcengine.endpointIdEnv in MODEL_LIST`)
   }
 
   const endpointId = requireEnv(env, endpointIdEnv)
