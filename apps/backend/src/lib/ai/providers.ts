@@ -23,8 +23,33 @@ function readEnv(env: ProvidersEnv, key: keyof ProvidersEnv & string): string | 
 
 function requireEnv(env: ProvidersEnv, key: keyof ProvidersEnv & string): string {
   const value = readEnv(env, key)
-  if (!value) throw new Error(`Missing environment variable: ${key}`)
+  if (!value) {
+    // Provide user-friendly error messages
+    let message = `Missing environment variable: ${key}`
+    if (key === 'OPENAI_API_KEY') {
+      message = 'OpenAI API Key 未配置。请在环境变量中设置 OPENAI_API_KEY。'
+    } else if (key === 'VOLCENGINE_API_KEY' || key === 'VOLC_API_KEY') {
+      message = '豆包 API Key 未配置。请在环境变量中设置 VOLCENGINE_API_KEY 或 VOLC_API_KEY。'
+    }
+    throw new Error(message)
+  }
   return value
+}
+
+export function checkProviderConfiguration(env: ProvidersEnv): {
+  volcengine: { configured: boolean; error?: string }
+  openai: { configured: boolean; error?: string }
+} {
+  return {
+    volcengine: {
+      configured: !!(readEnv(env, 'VOLCENGINE_API_KEY') || readEnv(env, 'VOLC_API_KEY')),
+      error: (readEnv(env, 'VOLCENGINE_API_KEY') || readEnv(env, 'VOLC_API_KEY')) ? undefined : '豆包 API Key 未配置',
+    },
+    openai: {
+      configured: !!readEnv(env, 'OPENAI_API_KEY'),
+      error: readEnv(env, 'OPENAI_API_KEY') ? undefined : 'OpenAI API Key 未配置',
+    },
+  }
 }
 
 export function getProviders(env: ProvidersEnv): Providers {

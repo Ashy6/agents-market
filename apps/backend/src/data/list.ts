@@ -57,6 +57,7 @@ export const MODEL_LIST = [
     systemPrompt: "你是中文专家助手，按步骤给出分析与可执行结论。",
     temperature: 0.3,
     supports: { streaming: true, tools: true, vision: false, json: true },
+    volcengine: { endpointIdEnv: "VOLCENGINE_MODEL_DOUBAO_PRO_CUSTOM" },
   },
   {
     id: 4,
@@ -68,6 +69,7 @@ export const MODEL_LIST = [
     systemPrompt: "你能理解图片与文本，结合上下文给出准确回答。",
     temperature: 0.3,
     supports: { streaming: true, tools: true, vision: true, json: true },
+    volcengine: { endpointIdEnv: "VOLCENGINE_MODEL_DOUBAO_LITE_VISION" },
   },
   {
     id: 5,

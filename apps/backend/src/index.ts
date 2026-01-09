@@ -1,4 +1,4 @@
-import { getCorsHeaders, handleAgents, handleChat, jsonResponse, type Env } from "./api";
+import { getCorsHeaders, handleAgents, handleHealthcheck, handleChat, jsonResponse, type Env } from "./api";
 
 // Worker 入口（Cloudflare Workers）
 // - GET  /health       健康检查
@@ -23,6 +23,19 @@ export default {
 
     if (pathname === "/health") {
       return jsonResponse({ ok: true }, { status: 200, headers: corsHeaders });
+    }
+
+    if (pathname === "/healthcheck" && request.method === "GET") {
+      try {
+        return await handleHealthcheck(request, env);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Healthcheck failed";
+        return jsonResponse(
+          { error: message },
+          { status: 500, headers: corsHeaders }
+        );
+      }
     }
 
     if (pathname === "/agents" && request.method === "GET") {

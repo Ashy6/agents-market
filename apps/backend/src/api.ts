@@ -1,6 +1,8 @@
 import { convertToModelMessages, streamText } from "ai";
 import { AGENT_LIST, getAgentById } from "./data/agents";
+import { MODEL_LIST } from "./data/list";
 import { getModel, type RegistryEnv } from "./lib/ai/registry";
+import { checkProviderConfiguration } from "./lib/ai/providers";
 import type { ChatRequestBody } from "./types/chat";
 
 export type Env = RegistryEnv & {
@@ -79,6 +81,57 @@ export async function handleAgents(
 
   const payload: AgentListResponseBody = { items };
   return jsonResponse(payload, { status: 200, headers: corsHeaders });
+}
+
+export async function handleHealthcheck(
+  request: Request,
+  env: Env
+): Promise<Response> {
+  const corsHeaders = getCorsHeaders(request, env);
+
+  try {
+    const providerStatus = checkProviderConfiguration(env);
+
+    // Get available models for each provider
+    const volcengineModels = providerStatus.volcengine.configured
+      ? MODEL_LIST.filter((m) => m.provider === "volcengine").map((m) => m.modelId)
+      : [];
+
+    const openaiModels = providerStatus.openai.configured
+      ? MODEL_LIST.filter((m) => m.provider === "openai").map((m) => m.modelId)
+      : [];
+
+    const payload = {
+      status: "ok" as const,
+      providers: {
+        volcengine: {
+          configured: providerStatus.volcengine.configured,
+          models: volcengineModels,
+        },
+        openai: {
+          configured: providerStatus.openai.configured,
+          models: openaiModels,
+        },
+      },
+      timestamp: new Date().toISOString(),
+    };
+
+    return jsonResponse(payload, { status: 200, headers: corsHeaders });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Healthcheck failed";
+    return jsonResponse(
+      {
+        status: "error" as const,
+        message,
+        providers: {
+          volcengine: { configured: false, models: [] },
+          openai: { configured: false, models: [] },
+        },
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500, headers: corsHeaders }
+    );
+  }
 }
 
 export async function handleChat(
