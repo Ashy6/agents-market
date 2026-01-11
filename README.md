@@ -19,9 +19,13 @@
 部署到 Cloudflare：使用 `wrangler secret put` 写入敏感变量。
 
 - 火山引擎（默认 provider）：
-  - `VOLCENGINE_API_KEY`
-  - `VOLCENGINE_BASE_URL`（例：`https://ark.cn-beijing.volces.com/api/v3`）
-  - `VOLCENGINE_MODEL_DOUBAO_LITE` 或 `VOLCENGINE_MODEL_DOUBAO_PRO`（Endpoint ID，如 `ep-xxxx`）
+  - `VOLCENGINE_API_KEY` 或 `VOLC_API_KEY`
+  - `VOLCENGINE_BASE_URL`（可选；例：`https://ark.cn-beijing.volces.com/api/v3`）
+  - 火山方舟 Endpoint ID（如 `ep-xxxx`，按需配置你要用的模型）：
+    - `VOLCENGINE_MODEL_DOUBAO_PRO`
+    - `VOLCENGINE_MODEL_DEEPSEEK_R1`
+    - `VOLCENGINE_MODEL_DEEPSEEK_V3`
+    - `VOLCENGINE_MODEL_DOUBAO_SEEDREAM`
 - OpenAI（当 provider=openai 时使用）：
   - `OPENAI_API_KEY`
   - `OPENAI_MODEL_ID`（可选，默认 `gpt-4o-mini`）

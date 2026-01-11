@@ -1,37 +1,39 @@
-# ==========================================
-# OpenAI 配置
-# ==========================================
+# 火山引擎 (Volcengine) / 豆包（方舟平台）Deepseek 配置 #
+# ====================================================================================================
+# 火山方舟 API 密钥：本项目通过 baseURL + apiKey 进行对接
+VOLCENGINE_API_KEY=****************
+
+# 火山方舟 Base URL（兼容 OpenAI）： 常见区域示例：北京
+VOLCENGINE_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
+
+# 对话模型接入点 ID（例如：ep-20250106xxxxxx-xxxxx）
+VOLCENGINE_CHAT_MODEL=ep-20260106000914-*****
+
+# 向量模型接入点 ID（例如：ep-20250106xxxxxx-xxxxx）
+VOLCENGINE_EMBEDDING_MODEL=ep-20260106001810-*****
+
+# Doubao Pro 32k - 中文专家模型，擅长长文本处理
+VOLCENGINE_MODEL_DOUBAO_PRO=ep-20260109003610-*****
+
+# DeepSeek R1 - 超强推理模型，擅长数学、代码、逻辑推理
+VOLCENGINE_MODEL_DEEPSEEK_R1=ep-20260110052019-*****
+
+# DeepSeek V3 - 通用平衡模型，适合日常问答和 Agent 任务
+VOLCENGINE_MODEL_DEEPSEEK_V3=ep-20260110052213-*****
+
+# Doubao Seedream 4.5 - 图像生成多模态模型，支持文生图、图生图、组图输出
+VOLCENGINE_MODEL_DOUBAO_SEEDREAM=ep-20260110052347-*****
+
+# ====================================================================================================
 # 你的 OpenAI API Key（仅在服务端使用，请勿暴露到前端）
-OPENAI_API_KEY=xxxxxx
+OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxxxxxx
 
-# ==========================================
-# 火山引擎 (Volcengine) / 豆包（方舟平台）配置
-# ==========================================
-# 火山引擎同样提供兼容 OpenAI 协议的接口，本项目通过 baseURL + apiKey 进行对接
-VOLCENGINE_API_KEY=xxxxxx
 
-# 方舟平台 OpenAI 兼容 API 的固定地址（不要加反引号）
-# 常见区域示例：北京
-VOLCENGINE_BASE_URL=xxxxxx
+# ====================================================================================================
+# 后端服务（Cloudflare Workers）运行配置：监听端口（默认 3000
+BACKEND_PORT=3000
 
-# ==========================================
-# 火山引擎推理接入点 (Endpoint ID) 预设
-# ==========================================
-# 注意：豆包在方舟平台通常使用 Endpoint ID 作为“模型名”，形如 ep-20240604-xxxx
-# 你可以把常用的 Endpoint ID 作为默认值配置在这里，后端也支持请求体动态传入 modelId
-
-# 豆包 Pro 32k（示例）
-VOLCENGINE_MODEL_DOUBAO_PRO=xxxxxx
-
-# 豆包 Lite 4k（示例）
-VOLCENGINE_MODEL_DOUBAO_LITE=xxxxxx
-
-# ==========================================
-
-# 后端服务（Cloudflare Workers）运行配置
-# ==========================================
-# 后端监听端口（默认 3000）
-BACKEND_PORT=xxxxxx
+DATABASE_URL=file:./mastra.db
 
 # 允许跨域访问的前端地址（Vite dev server 默认 5173）
-CORS_ORIGIN=xxxxxx
+CORS_ORIGIN=http://localhost:5173
