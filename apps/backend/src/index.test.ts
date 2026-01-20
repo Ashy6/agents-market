@@ -384,7 +384,8 @@ describe('workers backend', () => {
   test('API.md exists and mentions /api/chat', async () => {
     const fs = await import('node:fs/promises')
     const path = await import('node:path')
-    const apiPath = path.resolve(process.cwd(), 'API.md')
+    const url = await import('node:url')
+    const apiPath = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), 'docs', 'API.md')
     const content = await fs.readFile(apiPath, 'utf8')
     expect(content).toContain('/api/chat')
   })
