@@ -82,9 +82,7 @@ function App() {
         const data: AgentListResponse = await response.json()
         setAgents(data.items)
 
-        // Auto-select first doubao agent
-        const doubaoAgent = data.items.find((a) => a.modelId.startsWith('doubao'))
-        setSelectedAgentId(doubaoAgent?.id || data.items[0]?.id || null)
+        setSelectedAgentId(data.items[0]?.id || null)
       } catch (error) {
         console.error('Failed to load agents:', error)
       }

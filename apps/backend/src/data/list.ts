@@ -55,6 +55,21 @@ export const modelList = [
     },
   },
   {
+    id: 111,
+    modelId: ModelIdEnum.DoubaoPro32k,
+    provider: "volcengine",
+    displayName: "Doubao Pro 32k",
+    summary: "语言学家 Agent",
+    recommendedFor: ["长文总结", "报告撰写", "知识整理", "复杂说明文"] as const,
+    capabilities: { streaming: true, tools: true, vision: false, json: true },
+    defaultAgent: {
+      name: " 语言学家 Agent",
+      systemPrompt:
+        "你是各种语言处理专家，擅长分析、总结和创作长篇内容。回答时注重逻辑性和条理性，优先使用中文，必要时给出英文术语。回答时根据用户需求，揣测用户意图，引导用户进行回答.",
+      temperature: 0.3,
+    },
+  },
+  {
     id: 2,
     modelId: ModelIdEnum.DeepSeekR1Math,
     provider: "volcengine",

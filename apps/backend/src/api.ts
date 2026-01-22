@@ -123,7 +123,7 @@ export async function handleCreateAgent(
     body = (await request.json()) as CreateAgentRequestBody;
   } catch {
     return jsonResponse(
-      { error: "Invalid JSON body" },
+      { error: "Invalid JSON body，请求体必须是 JSON 格式" },
       { status: 400, headers: corsHeaders }
     );
   }
@@ -145,7 +145,7 @@ export async function handleCreateAgent(
     };
     return jsonResponse(payload, { status: 201, headers: corsHeaders });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Invalid request";
+    const message = error instanceof Error ? error.message : "Invalid request，检查请求体是否正确";
     return jsonResponse({ error: message }, { status: 400, headers: corsHeaders });
   }
 }
@@ -185,7 +185,7 @@ export async function handleHealthcheck(
 
     return jsonResponse(payload, { status: 200, headers: corsHeaders });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Healthcheck failed";
+    const message = error instanceof Error ? error.message : "Healthcheck failed，检查配置是否正确";
     return jsonResponse(
       {
         status: "error" as const,
@@ -212,41 +212,45 @@ export async function handleChat(
     body = (await request.json()) as ChatRequestBody;
   } catch {
     return jsonResponse(
-      { error: "Invalid JSON body" },
+      { error: "Invalid JSON body，请求体必须是 JSON 格式" },
       { status: 400, headers: corsHeaders }
     );
   }
 
   if (!Array.isArray(body.messages)) {
     return jsonResponse(
-      { error: "Invalid messages" },
+      { error: "Invalid messages，messages 必须是数组" },
       { status: 400, headers: corsHeaders }
     );
   }
 
-  if (typeof body.modelId === "string" && body.modelId.trim() === "") {
+  if (body.modelId !== undefined) {
+    if (typeof body.modelId !== "string" || body.modelId.trim() === "") {
+      return jsonResponse(
+        { error: "Invalid modelId，modelId 不能为空" },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+  }
+
+  const modelId = (body.modelId ?? "doubao-pro-32k").trim();
+
+  if (typeof body.systemPrompt !== "string" || body.systemPrompt.trim() === "") {
     return jsonResponse(
-      { error: "Invalid modelId" },
+      { error: "Invalid systemPrompt，systemPrompt 不能为空" },
       { status: 400, headers: corsHeaders }
     );
   }
 
-  const agents = listAgents();
-  const modelId = body.modelId ?? agents[0]?.modelId;
-  const agentDefaults = modelId
-    ? agents.find((a) => a.modelId === modelId)
-    : undefined;
-  const systemPrompt =
-    body.systemPrompt ?? agentDefaults?.systemPrompt ?? "你是一个专业的通用智能体。";
-  const temperature = normalizeTemperature(
-    body.temperature ?? agentDefaults?.temperature
-  );
-
-  if (!modelId)
+  const temperature = normalizeTemperature(body.temperature ?? 0.3);
+  if (temperature === undefined) {
     return jsonResponse(
-      { error: "Missing modelId" },
+      { error: "Invalid temperature，temperature 必须是 0 到 2 之间的数字" },
       { status: 400, headers: corsHeaders }
     );
+  }
+
+  const systemPrompt = body.systemPrompt.trim();
 
   if (modelId.startsWith("doubao-seedream-")) {
     const stream = createUIMessageStream({
@@ -288,7 +292,7 @@ export async function handleChat(
   try {
     model = getModel(modelId, env);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Invalid modelId";
+    const message = error instanceof Error ? error.message : "Invalid modelId，modelId 不存在";
     return jsonResponse(
       { error: message },
       { status: 400, headers: corsHeaders }
