@@ -228,7 +228,7 @@ export function createMarketApiClient(options: MarketApiClientOptions = {}) {
      */
     healthcheck: () => get<HealthcheckResponseBody>("/healthcheck"),
     /**
-     * GET /agents：获取后端内置 agent 列表（用于选择 agentId）。
+     * GET /agents：获取后端内置 agent 列表（用于选择 modelId）。
      */
     agents: () => get<AgentListResponseBody>("/agents"),
     /**

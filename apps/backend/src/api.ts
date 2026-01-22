@@ -4,8 +4,8 @@ import {
   createUIMessageStreamResponse,
   streamText,
 } from "ai";
-import { AGENT_LIST } from "./data/agents";
-import { MODEL_LIST } from "./data/list";
+import { createAgent, listAgents } from "./data/agents";
+import { MODEL_LIST, modelList } from "./data/list";
 import { getModel, type RegistryEnv } from "./lib/ai/registry";
 import { checkProviderConfiguration } from "./lib/ai/providers";
 import type { ChatRequestBody } from "./types/chat";
@@ -31,6 +31,21 @@ export type AgentListItem = {
 export type AgentListResponseBody = {
   items: AgentListItem[];
 };
+
+export type ModelListItem = (typeof modelList)[number];
+
+export type ModelListResponseBody = {
+  items: readonly ModelListItem[];
+};
+
+export type CreateAgentRequestBody = {
+  name: string;
+  modelId: string;
+  systemPrompt: string;
+  temperature?: number;
+};
+
+export type CreateAgentResponseBody = AgentListItem;
 
 export function getCorsHeaders(
   request: Request,
@@ -76,7 +91,7 @@ export async function handleAgents(
 ): Promise<Response> {
   const corsHeaders = getCorsHeaders(request, env);
 
-  const items: AgentListItem[] = AGENT_LIST.map((a) => ({
+  const items: AgentListItem[] = listAgents().map((a) => ({
     id: a.id,
     modelId: a.modelId,
     name: a.name,
@@ -86,6 +101,53 @@ export async function handleAgents(
 
   const payload: AgentListResponseBody = { items };
   return jsonResponse(payload, { status: 200, headers: corsHeaders });
+}
+
+export async function handleModels(
+  request: Request,
+  env: Env
+): Promise<Response> {
+  const corsHeaders = getCorsHeaders(request, env);
+  const payload: ModelListResponseBody = { items: modelList };
+  return jsonResponse(payload, { status: 200, headers: corsHeaders });
+}
+
+export async function handleCreateAgent(
+  request: Request,
+  env: Env
+): Promise<Response> {
+  const corsHeaders = getCorsHeaders(request, env);
+
+  let body: CreateAgentRequestBody | undefined;
+  try {
+    body = (await request.json()) as CreateAgentRequestBody;
+  } catch {
+    return jsonResponse(
+      { error: "Invalid JSON body" },
+      { status: 400, headers: corsHeaders }
+    );
+  }
+
+  try {
+    const created = createAgent({
+      name: body.name,
+      modelId: body.modelId,
+      systemPrompt: body.systemPrompt,
+      temperature: body.temperature,
+    });
+
+    const payload: CreateAgentResponseBody = {
+      id: created.id,
+      name: created.name,
+      modelId: created.modelId,
+      systemPrompt: created.systemPrompt,
+      temperature: created.temperature,
+    };
+    return jsonResponse(payload, { status: 201, headers: corsHeaders });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Invalid request";
+    return jsonResponse({ error: message }, { status: 400, headers: corsHeaders });
+  }
 }
 
 export async function handleHealthcheck(
@@ -169,9 +231,10 @@ export async function handleChat(
     );
   }
 
-  const modelId = body.modelId ?? AGENT_LIST[0]?.modelId;
+  const agents = listAgents();
+  const modelId = body.modelId ?? agents[0]?.modelId;
   const agentDefaults = modelId
-    ? AGENT_LIST.find((a) => a.modelId === modelId)
+    ? agents.find((a) => a.modelId === modelId)
     : undefined;
   const systemPrompt =
     body.systemPrompt ?? agentDefaults?.systemPrompt ?? "你是一个专业的通用智能体。";

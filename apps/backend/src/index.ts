@@ -1,4 +1,13 @@
-import { getCorsHeaders, handleAgents, handleHealthcheck, handleChat, jsonResponse, type Env } from "./api";
+import {
+  getCorsHeaders,
+  handleAgents,
+  handleChat,
+  handleCreateAgent,
+  handleHealthcheck,
+  handleModels,
+  jsonResponse,
+  type Env,
+} from "./api";
 
 // Worker 入口（Cloudflare Workers）
 // - GET  /health       健康检查
@@ -44,6 +53,32 @@ export default {
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Error listing agents";
+        return jsonResponse(
+          { error: message },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+
+    if (pathname === "/agents" && request.method === "POST") {
+      try {
+        return await handleCreateAgent(request, env);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Error creating agent";
+        return jsonResponse(
+          { error: message },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+
+    if (pathname === "/models" && request.method === "GET") {
+      try {
+        return await handleModels(request, env);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Error listing models";
         return jsonResponse(
           { error: message },
           { status: 500, headers: corsHeaders }

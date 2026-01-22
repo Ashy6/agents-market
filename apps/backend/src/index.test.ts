@@ -11,15 +11,25 @@ type MockedRegistry = {
   getModel: jest.Mock
 }
 
+type AgentConfig = {
+  id: string
+  name: string
+  modelId: string
+  systemPrompt: string
+  temperature: number
+}
+
+type CreateAgentInput = {
+  name: string
+  modelId: string
+  systemPrompt: string
+  temperature?: number
+}
+
 type MockedAgents = {
-  getAgentById: jest.Mock
-  AGENT_LIST: Array<{
-    id: string
-    name: string
-    modelId: string
-    systemPrompt: string
-    temperature: number
-  }>
+  listAgents: () => AgentConfig[]
+  createAgent: (input: CreateAgentInput) => AgentConfig
+  AGENT_LIST: AgentConfig[]
 }
 
 function makeUiStreamResponse(): Response {
@@ -52,18 +62,24 @@ async function setupWorker(overrides?: {
     ...overrides?.registry,
   }
 
+  const defaultAgentList = overrides?.agents?.AGENT_LIST ?? [
+    {
+      id: 'code-assistant',
+      name: '代码助手',
+      modelId: 'gpt-4o',
+      systemPrompt: 'S',
+      temperature: 0.2,
+    },
+  ]
+
   const agents: MockedAgents = {
-    getAgentById: jest.fn(() => undefined),
-    AGENT_LIST: [
-      {
-        id: 'code-assistant',
-        name: '代码助手',
-        modelId: 'gpt-4o',
-        systemPrompt: 'S',
-        temperature: 0.2,
-      },
-    ],
-    ...overrides?.agents,
+    AGENT_LIST: defaultAgentList,
+    listAgents: overrides?.agents?.listAgents ?? jest.fn(() => defaultAgentList),
+    createAgent:
+      overrides?.agents?.createAgent ??
+      jest.fn(() => {
+        throw new Error('Not implemented')
+      }),
   }
 
   jest.resetModules()
@@ -80,7 +96,8 @@ async function setupWorker(overrides?: {
   }))
 
   jest.unstable_mockModule('./data/agents', () => ({
-    getAgentById: agents.getAgentById,
+    listAgents: agents.listAgents,
+    createAgent: agents.createAgent,
     AGENT_LIST: agents.AGENT_LIST,
   }))
 
@@ -241,6 +258,15 @@ describe('workers backend', () => {
             temperature: 0.7,
           },
         ],
+        listAgents: jest.fn(() => [
+          {
+            id: 'doubao-lite',
+            name: '中文翻译官',
+            modelId: 'doubao-lite',
+            systemPrompt: 'S',
+            temperature: 0.7,
+          },
+        ]),
       },
       registry: {
         getModel: jest.fn(() => ({})),
@@ -279,6 +305,15 @@ describe('workers backend', () => {
             temperature: 0.1,
           },
         ],
+        listAgents: jest.fn(() => [
+          {
+            id: 'code-assistant',
+            name: '代码助手',
+            modelId: 'gpt-4o',
+            systemPrompt: 'SYS0',
+            temperature: 0.1,
+          },
+        ]),
       },
       registry: {
         getModel: jest.fn(() => ({})),
@@ -301,6 +336,102 @@ describe('workers backend', () => {
     const streamTextArgs = ai.streamText.mock.calls[0][0] as { system?: string; temperature?: number }
     expect(streamTextArgs.system).toBe('SYS0')
     expect(streamTextArgs.temperature).toBe(0.1)
+  })
+
+  test('GET /models returns model list', async () => {
+    const { worker } = await setupWorker()
+    const res = await worker.fetch(new Request('http://localhost/models'), {})
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { items: Array<{ modelId: string; displayName: string }> }
+    expect(Array.isArray(body.items)).toBe(true)
+    expect(body.items.some((m) => m.modelId === 'gpt-4o')).toBe(true)
+  })
+
+  test('POST /agents creates agent', async () => {
+    const dynamicAgents = [
+      {
+        id: 'code-assistant',
+        name: '代码助手',
+        modelId: 'gpt-4o',
+        systemPrompt: 'S',
+        temperature: 0.2,
+      },
+    ]
+
+    const { worker } = await setupWorker({
+      agents: {
+        AGENT_LIST: dynamicAgents,
+        listAgents: jest.fn(() => dynamicAgents),
+        createAgent: jest.fn((input: CreateAgentInput) => {
+          const { name, modelId, systemPrompt, temperature } = input
+          const created = {
+            id: 'a1',
+            name,
+            modelId,
+            systemPrompt,
+            temperature: temperature ?? 0.7,
+          }
+          dynamicAgents.unshift(created)
+          return created
+        }),
+      },
+    })
+
+    const req = new Request('http://localhost/agents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: '自定义助手',
+        modelId: 'gpt-4o',
+        systemPrompt: 'SYS',
+        temperature: 0.5,
+      }),
+    })
+
+    const res = await worker.fetch(req, {})
+    expect(res.status).toBe(201)
+    const created = (await res.json()) as { id: string; name: string }
+    expect(created.id).toBe('a1')
+    expect(created.name).toBe('自定义助手')
+
+    const listRes = await worker.fetch(new Request('http://localhost/agents'), {})
+    expect(listRes.status).toBe(200)
+    const listBody = (await listRes.json()) as { items: Array<{ id: string }> }
+    expect(listBody.items.some((a) => a.id === 'a1')).toBe(true)
+  })
+
+  test('POST /agents rejects invalid JSON body', async () => {
+    const { worker } = await setupWorker()
+    const req = new Request('http://localhost/agents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{',
+    })
+    const res = await worker.fetch(req, {})
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toEqual({ error: 'Invalid JSON body' })
+  })
+
+  test('POST /agents rejects invalid fields', async () => {
+    const { worker } = await setupWorker({
+      agents: {
+        createAgent: jest.fn(() => {
+          throw new Error('Invalid name')
+        }),
+      },
+    })
+    const req = new Request('http://localhost/agents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: '',
+        modelId: 'gpt-4o',
+        systemPrompt: 'S',
+      }),
+    })
+    const res = await worker.fetch(req, {})
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toEqual({ error: 'Invalid name' })
   })
 
   test('POST /chat rejects unknown modelId', async () => {

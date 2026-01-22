@@ -123,6 +123,101 @@ export type AgentListResponseBody = {
 curl -sS https://market-api.singulay.online/api/agents | head -n 50
 ```
 
+## POST /api/agents
+
+用途：创建一个自定义 Agent（指定 modelId + 自定义 systemPrompt/temperature），用于后续 /api/chat 调用。
+
+### Request
+
+- Method: `POST`
+- Path: `/api/agents`（也可用 `/agents`）
+- Headers: `Content-Type: application/json`
+
+入参类型：
+
+```ts
+export type CreateAgentRequestBody = {
+  name: string
+  modelId: string
+  systemPrompt: string
+  temperature?: number
+}
+```
+
+### Response
+
+- `201 application/json`
+
+返回体类型与 GET /api/agents 的单个条目一致：
+
+```ts
+export type CreateAgentResponseBody = AgentListItem
+```
+
+### 常见错误与状态码
+
+- `400 Invalid JSON body`：请求体不是合法 JSON
+- `400 Invalid name`：name 为空或全是空白
+- `400 Invalid modelId`：modelId 为空或全是空白
+- `400 Unknown modelId`：modelId 不在后端支持列表中
+- `400 Invalid systemPrompt`：systemPrompt 为空或全是空白
+
+### curl
+
+```bash
+curl -sS \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"自定义助手","modelId":"gpt-4o","systemPrompt":"你是一个专业助手","temperature":0.5}' \
+  https://market-api.singulay.online/api/agents
+```
+
+## GET /api/models
+
+用途：获取“模型列表”（modelId + 能力 + 推荐用途 + 默认 Agent 配置），用于前端创建 Agent 时做模型选择与提示。
+
+### Request
+
+- Method: `GET`
+- Path: `/api/models`（也可用 `/models`）
+
+### Response
+
+- `200 application/json`
+
+```ts
+export type ModelCapabilities = {
+  streaming: boolean
+  tools: boolean
+  vision: boolean
+  json: boolean
+}
+
+export type ModelListItem = {
+  id: number
+  modelId: string
+  provider: 'openai' | 'volcengine'
+  displayName: string
+  summary: string
+  recommendedFor: readonly string[]
+  capabilities: ModelCapabilities
+  defaultAgent: {
+    name: string
+    systemPrompt: string
+    temperature: number
+  }
+}
+
+export type ModelListResponseBody = {
+  items: readonly ModelListItem[]
+}
+```
+
+### curl
+
+```bash
+curl -sS https://market-api.singulay.online/api/models | head -n 80
+```
+
 ## GET /api/healthcheck
 
 用途：检查后端当前 Provider 的配置情况，以及可用的模型列表（按 provider 归类）。
