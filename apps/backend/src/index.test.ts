@@ -221,7 +221,7 @@ describe('workers backend', () => {
 
     const streamTextArgs = ai.streamText.mock.calls[0][0] as { system?: string; temperature?: number }
     expect(streamTextArgs.system).toBe('SYS')
-    expect(streamTextArgs.temperature).toBeUndefined()
+    expect(streamTextArgs.temperature).toBe(0.2)
     expect(registry.getModel).toHaveBeenCalledWith('gpt-4o', expect.objectContaining({ CORS_ORIGIN: 'http://localhost:5173' }))
 
     const convertArgs = ai.convertToModelMessages.mock.calls[0][0] as Array<Record<string, unknown>>
@@ -229,16 +229,18 @@ describe('workers backend', () => {
     expect(convertArgs[0]).not.toHaveProperty('id')
   })
 
-  test('POST /chat uses agent config when agentId provided', async () => {
-    const { worker, ai, registry, agents } = await setupWorker({
+  test('POST /chat uses agent defaults when modelId matches an agent', async () => {
+    const { worker, ai, registry } = await setupWorker({
       agents: {
-        getAgentById: jest.fn(() => ({
-          id: 'zh-translator',
-          name: '中文翻译官',
-          modelId: 'doubao-lite',
-          systemPrompt: 'S',
-          temperature: 0.7,
-        })),
+        AGENT_LIST: [
+          {
+            id: 'doubao-lite',
+            name: '中文翻译官',
+            modelId: 'doubao-lite',
+            systemPrompt: 'S',
+            temperature: 0.7,
+          },
+        ],
       },
       registry: {
         getModel: jest.fn(() => ({})),
@@ -250,7 +252,7 @@ describe('workers backend', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         messages: [{ id: '1', role: 'user', parts: [{ type: 'text', text: 'hi' }] }],
-        agentId: 'zh-translator',
+        modelId: 'doubao-lite',
       }),
     })
 
@@ -259,14 +261,13 @@ describe('workers backend', () => {
       VOLCENGINE_API_KEY: 'k',
     })
     expect(res.status).toBe(200)
-    expect(agents.getAgentById).toHaveBeenCalledWith('zh-translator')
     expect(registry.getModel).toHaveBeenCalledWith('doubao-lite', expect.objectContaining({ VOLCENGINE_API_KEY: 'k' }))
     const streamTextArgs = ai.streamText.mock.calls[0][0] as { system?: string; temperature?: number }
     expect(streamTextArgs.system).toBe('S')
     expect(streamTextArgs.temperature).toBe(0.7)
   })
 
-  test('POST /chat defaults to AGENT_LIST[0] when no agentId/modelId', async () => {
+  test('POST /chat defaults to AGENT_LIST[0] when no modelId', async () => {
     const { worker, ai, registry } = await setupWorker({
       agents: {
         AGENT_LIST: [
@@ -300,25 +301,6 @@ describe('workers backend', () => {
     const streamTextArgs = ai.streamText.mock.calls[0][0] as { system?: string; temperature?: number }
     expect(streamTextArgs.system).toBe('SYS0')
     expect(streamTextArgs.temperature).toBe(0.1)
-  })
-
-  test('POST /chat rejects unknown agentId', async () => {
-    const { worker } = await setupWorker({
-      agents: {
-        getAgentById: jest.fn(() => undefined),
-      },
-    })
-    const req = new Request('http://localhost/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [{ id: '1', role: 'user', parts: [{ type: 'text', text: 'hi' }] }],
-        agentId: 'missing-agent',
-      }),
-    })
-    const res = await worker.fetch(req, {})
-    expect(res.status).toBe(400)
-    await expect(res.json()).resolves.toEqual({ error: 'Unknown agentId: missing-agent' })
   })
 
   test('POST /chat rejects unknown modelId', async () => {

@@ -82,8 +82,11 @@ function App() {
     const text = input.trim()
     if (!text || isLoading || !selectedAgentId) return
 
+    const modelId = agents.find((a) => a.id === selectedAgentId)?.modelId
+    if (!modelId) return
+
     setInput('')
-    void sendMessage({ text }, { body: { agentId: selectedAgentId } })
+    void sendMessage({ text }, { body: { modelId } })
   }
 
   // Handle clear conversation

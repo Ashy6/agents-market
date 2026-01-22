@@ -4,7 +4,7 @@ import {
   createUIMessageStreamResponse,
   streamText,
 } from "ai";
-import { AGENT_LIST, getAgentById } from "./data/agents";
+import { AGENT_LIST } from "./data/agents";
 import { MODEL_LIST } from "./data/list";
 import { getModel, type RegistryEnv } from "./lib/ai/registry";
 import { checkProviderConfiguration } from "./lib/ai/providers";
@@ -169,23 +169,14 @@ export async function handleChat(
     );
   }
 
-  const agent = body.agentId
-    ? getAgentById(body.agentId)
-    : !body.modelId
-    ? AGENT_LIST[0]
+  const modelId = body.modelId ?? AGENT_LIST[0]?.modelId;
+  const agentDefaults = modelId
+    ? AGENT_LIST.find((a) => a.modelId === modelId)
     : undefined;
-  if (body.agentId && !agent) {
-    return jsonResponse(
-      { error: `Unknown agentId: ${body.agentId}` },
-      { status: 400, headers: corsHeaders }
-    );
-  }
-
-  const modelId = agent?.modelId ?? body.modelId;
   const systemPrompt =
-    agent?.systemPrompt ?? body.systemPrompt ?? "你是一个专业的通用智能体。";
+    body.systemPrompt ?? agentDefaults?.systemPrompt ?? "你是一个专业的通用智能体。";
   const temperature = normalizeTemperature(
-    agent?.temperature ?? body.temperature
+    body.temperature ?? agentDefaults?.temperature
   );
 
   if (!modelId)
