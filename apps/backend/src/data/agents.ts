@@ -17,7 +17,7 @@ const BASE_AGENT_LIST: AgentConfig[] = [...modelList]
     return a.id - b.id;
   })
   .map((m) => ({
-    id: m.modelId,
+    id: `${m.modelId}-${m.id}`,
     name: m.defaultAgent.name,
     modelId: m.modelId,
     systemPrompt: m.defaultAgent.systemPrompt,

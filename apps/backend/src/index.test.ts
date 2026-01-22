@@ -130,6 +130,7 @@ describe('workers backend', () => {
     expect(Array.isArray(body.items)).toBe(true)
     expect(body.items.length).toBeGreaterThan(0)
     expect(body.items.some((i) => i.modelId === 'gpt-4o')).toBe(true)
+    expect(new Set(body.items.map((i) => i.id)).size).toBe(body.items.length)
   })
 
   test('GET /api/agents returns agents list', async () => {
@@ -140,6 +141,7 @@ describe('workers backend', () => {
       items: Array<{ id: string; modelId: string; name: string; systemPrompt: string; temperature: number }>
     }
     expect(body.items.some((i) => i.modelId === 'gpt-4o')).toBe(true)
+    expect(new Set(body.items.map((i) => i.id)).size).toBe(body.items.length)
   })
 
   test('OPTIONS returns 204 and CORS headers', async () => {
