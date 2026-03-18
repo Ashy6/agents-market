@@ -3,12 +3,15 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse,
   streamText,
+  embed,
 } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { createAgent, listAgents } from "./data/agents";
 import { MODEL_LIST, modelList } from "./data/list";
 import { getModel, type RegistryEnv } from "./lib/ai/registry";
 import { checkProviderConfiguration } from "./lib/ai/providers";
 import type { ChatRequestBody } from "./types/chat";
+import agentsVectorStore from "./data/agents-vector-store.json";
 
 export type Env = RegistryEnv & {
   /**
@@ -199,6 +202,112 @@ export async function handleHealthcheck(
       { status: 500, headers: corsHeaders }
     );
   }
+}
+
+function cosineSim(a: number[], b: number[]): number {
+  let dot = 0, na = 0, nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    na += a[i] ** 2;
+    nb += b[i] ** 2;
+  }
+  return dot / (Math.sqrt(na) * Math.sqrt(nb) || 1);
+}
+
+export type AgentRecommendRequestBody = {
+  query: string;
+  topK?: number;
+};
+
+export type AgentRecommendItem = {
+  agent: AgentListItem;
+  score: number;
+};
+
+export type AgentRecommendResponseBody = {
+  items: AgentRecommendItem[];
+};
+
+export async function handleAgentRecommend(
+  request: Request,
+  env: Env
+): Promise<Response> {
+  const corsHeaders = getCorsHeaders(request, env);
+
+  let body: AgentRecommendRequestBody | undefined;
+  try {
+    body = (await request.json()) as AgentRecommendRequestBody;
+  } catch {
+    return jsonResponse(
+      { error: "Invalid JSON body，请求体必须是 JSON 格式" },
+      { status: 400, headers: corsHeaders }
+    );
+  }
+
+  const query = body?.query?.trim();
+  if (!query) {
+    return jsonResponse(
+      { error: "query 不能为空" },
+      { status: 400, headers: corsHeaders }
+    );
+  }
+
+  if (!env.OPENAI_API_KEY) {
+    return jsonResponse(
+      { error: "推荐功能需要配置 OPENAI_API_KEY" },
+      { status: 503, headers: corsHeaders }
+    );
+  }
+
+  const topK = typeof body?.topK === "number" ? Math.max(1, body.topK) : 3;
+
+  const openaiProvider = createOpenAI({ apiKey: env.OPENAI_API_KEY });
+  const { embedding: queryEmbedding } = await embed({
+    model: openaiProvider.embedding("text-embedding-3-small"),
+    value: query,
+  });
+
+  type StoreItem = {
+    embedding: number[];
+    metadata: Record<string, string>;
+  };
+  const store = agentsVectorStore as { items: StoreItem[] };
+
+  const scored = store.items.map((item) => ({
+    metadata: item.metadata,
+    score: cosineSim(queryEmbedding, item.embedding),
+  }));
+
+  const seen = new Set<string>();
+  const top = scored
+    .sort((a, b) => b.score - a.score)
+    .filter((r) => {
+      if (seen.has(r.metadata.agentId)) return false;
+      seen.add(r.metadata.agentId);
+      return true;
+    })
+    .slice(0, topK);
+
+  const allAgents = listAgents();
+  const items: AgentRecommendItem[] = top
+    .map((r) => {
+      const found = allAgents.find((a) => a.id === r.metadata.agentId);
+      if (!found) return null;
+      return {
+        agent: {
+          id: found.id,
+          name: found.name,
+          modelId: found.modelId,
+          systemPrompt: found.systemPrompt,
+          temperature: found.temperature,
+        },
+        score: Math.round(r.score * 1000) / 1000,
+      };
+    })
+    .filter((r): r is AgentRecommendItem => r !== null);
+
+  const payload: AgentRecommendResponseBody = { items };
+  return jsonResponse(payload, { status: 200, headers: corsHeaders });
 }
 
 export async function handleChat(

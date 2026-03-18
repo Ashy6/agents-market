@@ -61,6 +61,9 @@ function App() {
   const [createError, setCreateError] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [recommendQuery, setRecommendQuery] = useState('')
+  const [isRecommending, setIsRecommending] = useState(false)
+  const [recommendations, setRecommendations] = useState<Array<{ agent: Agent; score: number }>>([])
 
   // Initialize chat
   const chat = useMemo(() => {
@@ -230,6 +233,26 @@ function App() {
     }
   }
 
+  const handleRecommend = async () => {
+    if (!recommendQuery.trim() || isRecommending) return
+    setIsRecommending(true)
+    setRecommendations([])
+    try {
+      const recommendApi = backendApiUrl.replace('/chat', '/agents/recommend')
+      const res = await fetch(recommendApi, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: recommendQuery, topK: 3 }),
+      })
+      const data = await res.json() as { items?: Array<{ agent: Agent; score: number }> }
+      setRecommendations(data.items ?? [])
+    } catch (error) {
+      console.error('推荐失败:', error)
+    } finally {
+      setIsRecommending(false)
+    }
+  }
+
   const handleSelectAgent = (agentId: string) => {
     setSelectedAgentId(agentId)
     setIsSidebarOpen(false)
@@ -295,6 +318,44 @@ function App() {
               </button>
             </div>
           </div>
+          {/* 智能推荐区块 */}
+          <div className="p-3 border-b">
+            <div className="flex gap-2">
+              <input
+                value={recommendQuery}
+                onChange={(e) => setRecommendQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && void handleRecommend()}
+                placeholder="✨ 描述你的需求..."
+                className="flex-1 text-sm px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 min-w-0"
+              />
+              <button
+                onClick={() => void handleRecommend()}
+                disabled={isRecommending || !recommendQuery.trim()}
+                className="text-sm px-2.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 whitespace-nowrap"
+              >
+                {isRecommending ? '…' : '推荐'}
+              </button>
+            </div>
+            {recommendations.length > 0 && (
+              <div className="mt-2 space-y-1">
+                <div className="text-xs text-gray-400">推荐结果</div>
+                {recommendations.map(({ agent, score }) => (
+                  <button
+                    key={agent.id}
+                    onClick={() => handleSelectAgent(agent.id)}
+                    className="w-full text-left px-2.5 py-2 rounded-lg bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-blue-900 truncate">{agent.name}</span>
+                      <span className="text-xs text-blue-500 ml-1 shrink-0">{(score * 100).toFixed(0)}%</span>
+                    </div>
+                    <div className="text-xs text-blue-600 opacity-70 truncate">{agent.modelId}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
             {agents.map((agent) => (
               <button

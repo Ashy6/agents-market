@@ -7,7 +7,8 @@
     "dev": "wrangler dev --local --port 3300",
     "deploy": "wrangler deploy",
     "test": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "vectorize": "tsx scripts/vectorize-agents.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.7",
@@ -15,10 +16,12 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260103.0",
+    "@singulay/rag-sdk": "^0.1.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.10",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
+    "tsx": "^4.19.3",
     "typescript": "^5.6.3",
     "wrangler": "^3.99.0"
   }

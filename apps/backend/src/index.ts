@@ -1,5 +1,6 @@
 import {
   getCorsHeaders,
+  handleAgentRecommend,
   handleAgents,
   handleChat,
   handleCreateAgent,
@@ -43,6 +44,20 @@ export default {
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Healthcheck failed，健康检查失败";
+        return jsonResponse(
+          { error: message },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+
+    // POST /agents/recommend：根据用户需求描述推荐 top-K agents（RAG 语义检索）
+    if (pathname === "/agents/recommend" && request.method === "POST") {
+      try {
+        return await handleAgentRecommend(request, env);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Agent 推荐失败";
         return jsonResponse(
           { error: message },
           { status: 500, headers: corsHeaders }
