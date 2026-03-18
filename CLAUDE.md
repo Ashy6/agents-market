@@ -53,3 +53,5 @@ npm test                 # 运行所有测试
 4. **新增模型** — 只需改 `data/list.ts` + `providers.ts` + `registry.ts`
 5. **不提交 `.dev.vars`** — 含密钥，已在 .gitignore 中
 6. **完成功能后更新 plan.md** — 标记对应条目为已完成
+7. 每次提需求后 -> 同步更新需求文档
+8. 完成大功能后 -> 同步更新 readme
