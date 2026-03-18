@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Chat as AIChat, useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, type UIMessage } from 'ai'
 import ReactMarkdown from 'react-markdown'
@@ -61,6 +61,7 @@ function App() {
   const [createError, setCreateError] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [recommendQuery, setRecommendQuery] = useState('')
   const [isRecommending, setIsRecommending] = useState(false)
   const [recommendations, setRecommendations] = useState<Array<{ agent: Agent; score: number }>>([])
@@ -252,6 +253,23 @@ function App() {
       setIsRecommending(false)
     }
   }
+
+  const formatText = useCallback((before: string, after: string, placeholder = '') => {
+    const ta = textareaRef.current
+    if (!ta) return
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    const selected = input.slice(start, end) || placeholder
+    const newValue = input.slice(0, start) + before + selected + after + input.slice(end)
+    setInput(newValue)
+    requestAnimationFrame(() => {
+      ta.focus()
+      const newStart = start + before.length
+      ta.setSelectionRange(newStart, newStart + selected.length)
+      ta.style.height = 'auto'
+      ta.style.height = `${ta.scrollHeight}px`
+    })
+  }, [input])
 
   const handleSelectAgent = (agentId: string) => {
     setSelectedAgentId(agentId)
@@ -552,7 +570,7 @@ function App() {
           </main>
 
           {/* Input Area */}
-          <footer className="border-t bg-white p-3 md:p-4">
+          <footer className="border-t bg-white px-3 pt-2 pb-3 md:px-4 md:pb-4">
             <div className="flex items-center gap-2 mb-2 text-sm text-gray-600">
               <span className="hidden md:inline">当前 Agent:</span>
               <span className="font-medium truncate max-w-[160px] md:max-w-none">
@@ -565,26 +583,100 @@ function App() {
                 新对话
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="flex gap-2">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="输入消息，支持 Markdown"
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 text-sm md:text-base min-w-0"
-                disabled={isLoading}
-              />
-              <button
-                type="submit"
-                disabled={isLoading || !input.trim()}
-                className="px-4 md:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap text-sm md:text-base"
-              >
-                {isLoading ? '...' : '发送'}
-              </button>
-            </form>
+
+            <div className="border border-gray-300 rounded-lg focus-within:border-blue-500 transition-colors">
+              {/* 工具栏 */}
+              <div className="flex items-center gap-0.5 px-2 py-1 border-b border-gray-200">
+                <ToolbarButton title="粗体 (Ctrl+B)" onClick={() => formatText('**', '**', '粗体文字')}>
+                  <span className="font-bold text-sm">B</span>
+                </ToolbarButton>
+                <ToolbarButton title="斜体 (Ctrl+I)" onClick={() => formatText('*', '*', '斜体文字')}>
+                  <span className="italic text-sm">I</span>
+                </ToolbarButton>
+                <ToolbarButton title="行内代码" onClick={() => formatText('`', '`', 'code')}>
+                  <span className="font-mono text-xs">{'<>'}</span>
+                </ToolbarButton>
+                <div className="w-px h-4 bg-gray-200 mx-1" />
+                <ToolbarButton title="代码块" onClick={() => formatText('```\n', '\n```', '代码内容')}>
+                  <span className="font-mono text-xs">{'```'}</span>
+                </ToolbarButton>
+                <ToolbarButton title="引用" onClick={() => formatText('> ', '', '引用内容')}>
+                  <span className="text-sm">"</span>
+                </ToolbarButton>
+                <ToolbarButton title="无序列表" onClick={() => formatText('- ', '', '列表项')}>
+                  <span className="text-sm">•—</span>
+                </ToolbarButton>
+                <div className="ml-auto text-xs text-gray-400 hidden md:block">
+                  Ctrl+Enter 发送
+                </div>
+              </div>
+
+              {/* 编辑区 */}
+              <form onSubmit={handleSubmit} className="flex gap-2 p-2">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => {
+                    setInput(e.target.value)
+                    e.target.style.height = 'auto'
+                    e.target.style.height = `${e.target.scrollHeight}px`
+                  }}
+                  onKeyDown={(e) => {
+                    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                      e.preventDefault()
+                      handleSubmit(e as unknown as React.FormEvent)
+                    }
+                    if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+                      e.preventDefault()
+                      formatText('**', '**', '粗体文字')
+                    }
+                    if ((e.metaKey || e.ctrlKey) && e.key === 'i') {
+                      e.preventDefault()
+                      formatText('*', '*', '斜体文字')
+                    }
+                  }}
+                  placeholder="输入消息，支持 Markdown 格式..."
+                  rows={1}
+                  className="flex-1 resize-none focus:outline-none text-sm md:text-base min-w-0 max-h-48 leading-relaxed"
+                  disabled={isLoading}
+                />
+                <button
+                  type="submit"
+                  disabled={isLoading || !input.trim()}
+                  className="self-end px-4 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap text-sm md:text-base shrink-0"
+                >
+                  {isLoading ? '...' : '发送'}
+                </button>
+              </form>
+            </div>
           </footer>
         </div>
       </div>
     </div>
+  )
+}
+
+function ToolbarButton({
+  onClick,
+  title,
+  children,
+}: {
+  onClick: () => void
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      onMouseDown={(e) => {
+        e.preventDefault() // 防止 textarea 失去焦点
+        onClick()
+      }}
+      className="px-1.5 py-0.5 rounded text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors min-w-[24px] flex items-center justify-center"
+    >
+      {children}
+    </button>
   )
 }
 
