@@ -60,6 +60,7 @@ function App() {
   const [createTemperature, setCreateTemperature] = useState(0.7)
   const [createError, setCreateError] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   // Initialize chat
   const chat = useMemo(() => {
@@ -229,37 +230,80 @@ function App() {
     }
   }
 
+  const handleSelectAgent = (agentId: string) => {
+    setSelectedAgentId(agentId)
+    setIsSidebarOpen(false)
+  }
+
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="px-4 py-3 border-b bg-white">
+      <header className="px-4 py-3 border-b bg-white flex items-center gap-3">
+        {/* Hamburger menu — mobile only */}
+        <button
+          className="md:hidden p-1 rounded text-gray-600 hover:bg-gray-100"
+          onClick={() => setIsSidebarOpen(true)}
+          aria-label="打开菜单"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
         <h1 className="text-lg font-semibold">AI Chat</h1>
+        {/* Current agent name — mobile only */}
+        {selectedAgent && (
+          <span className="md:hidden ml-auto text-sm text-gray-500 truncate max-w-[140px]">
+            {selectedAgent.name}
+          </span>
+        )}
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Mobile overlay backdrop */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-40 z-40 md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
         {/* Agent List Sidebar */}
-        <aside className="w-80 border-r bg-white overflow-y-auto">
+        <aside
+          className={`
+            fixed inset-y-0 left-0 z-50 w-80 bg-white border-r flex flex-col
+            transform transition-transform duration-200
+            md:relative md:translate-x-0 md:z-auto md:flex md:flex-shrink-0
+            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          `}
+        >
           <div className="p-4 border-b">
             <div className="flex items-center gap-2">
               <h2 className="font-semibold">可用 Agents</h2>
+              {/* Close button — mobile only */}
+              <button
+                className="md:hidden ml-auto text-gray-400 hover:text-gray-600 text-xl leading-none"
+                onClick={() => setIsSidebarOpen(false)}
+                aria-label="关闭菜单"
+              >
+                ×
+              </button>
               <button
                 onClick={openCreate}
-                className="ml-auto text-sm px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                className="ml-auto md:ml-0 text-sm px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
               >
                 新建
               </button>
             </div>
           </div>
-          <div className="p-2 space-y-1">
+          <div className="flex-1 overflow-y-auto p-2 space-y-1">
             {agents.map((agent) => (
               <button
                 key={agent.id}
-                onClick={() => setSelectedAgentId(agent.id)}
-                className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                  agent.id === selectedAgentId
+                onClick={() => handleSelectAgent(agent.id)}
+                className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${agent.id === selectedAgentId
                     ? 'bg-blue-50 border-l-4 border-blue-600'
                     : 'hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <div className="font-medium text-sm">{agent.name}</div>
                 <div className="text-xs text-gray-500">{agent.modelId}</div>
@@ -268,8 +312,9 @@ function App() {
           </div>
         </aside>
 
+        {/* Create Agent Modal */}
         {isCreateOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
               <div className="flex items-center justify-between p-4 border-b border-gray-200">
                 <h2 className="text-xl font-semibold">创建 Agent</h2>
@@ -393,7 +438,7 @@ function App() {
         )}
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Messages */}
           <main className="flex-1 overflow-y-auto p-4">
             {messages.length === 0 ? (
@@ -403,7 +448,7 @@ function App() {
                     {selectedAgent?.name || '选择一个 Agent 开始对话'}
                   </div>
                   <div className="text-sm">
-                    {selectedAgent?.systemPrompt || '从左侧选择一个 agent'}
+                    {selectedAgent?.systemPrompt || '点击左上角菜单选择 Agent'}
                   </div>
                 </div>
               </div>
@@ -412,16 +457,14 @@ function App() {
                 {messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${
-                      message.role === 'user' ? 'justify-end' : 'justify-start'
-                    }`}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'
+                      }`}
                   >
                     <div
-                      className={`rounded-lg px-4 py-2 max-w-[75%] ${
-                        message.role === 'user'
+                      className={`rounded-lg px-4 py-2 max-w-[90%] md:max-w-[75%] ${message.role === 'user'
                           ? 'bg-blue-600 text-white'
                           : 'bg-white border border-gray-200'
-                      }`}
+                        }`}
                     >
                       <ReactMarkdown>
                         {message.parts
@@ -448,12 +491,15 @@ function App() {
           </main>
 
           {/* Input Area */}
-          <footer className="border-t bg-white p-4">
+          <footer className="border-t bg-white p-3 md:p-4">
             <div className="flex items-center gap-2 mb-2 text-sm text-gray-600">
-              <span>当前 Agent: {selectedAgent?.name || '未选择'}</span>
+              <span className="hidden md:inline">当前 Agent:</span>
+              <span className="font-medium truncate max-w-[160px] md:max-w-none">
+                {selectedAgent?.name || '未选择'}
+              </span>
               <button
                 onClick={handleClear}
-                className="ml-auto text-blue-600 hover:text-blue-800"
+                className="ml-auto text-blue-600 hover:text-blue-800 whitespace-nowrap"
               >
                 新对话
               </button>
@@ -463,15 +509,15 @@ function App() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="输入消息，支持 Markdown"
-                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 text-sm md:text-base min-w-0"
                 disabled={isLoading}
               />
               <button
                 type="submit"
                 disabled={isLoading || !input.trim()}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="px-4 md:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap text-sm md:text-base"
               >
-                {isLoading ? '发送中...' : '发送'}
+                {isLoading ? '...' : '发送'}
               </button>
             </form>
           </footer>
