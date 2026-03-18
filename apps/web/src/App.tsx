@@ -61,7 +61,9 @@ function App() {
   const [createError, setCreateError] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isEditorExpanded, setIsEditorExpanded] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const [recommendQuery, setRecommendQuery] = useState('')
   const [isRecommending, setIsRecommending] = useState(false)
   const [recommendations, setRecommendations] = useState<Array<{ agent: Agent; score: number }>>([])
@@ -584,71 +586,125 @@ function App() {
               </button>
             </div>
 
-            <div className="border border-gray-300 rounded-lg focus-within:border-blue-500 transition-colors">
-              {/* 工具栏 */}
-              <div className="flex items-center gap-0.5 px-2 py-1 border-b border-gray-200">
-                <ToolbarButton title="粗体 (Ctrl+B)" onClick={() => formatText('**', '**', '粗体文字')}>
-                  <span className="font-bold text-sm">B</span>
-                </ToolbarButton>
-                <ToolbarButton title="斜体 (Ctrl+I)" onClick={() => formatText('*', '*', '斜体文字')}>
-                  <span className="italic text-sm">I</span>
-                </ToolbarButton>
-                <ToolbarButton title="行内代码" onClick={() => formatText('`', '`', 'code')}>
-                  <span className="font-mono text-xs">{'<>'}</span>
-                </ToolbarButton>
-                <div className="w-px h-4 bg-gray-200 mx-1" />
-                <ToolbarButton title="代码块" onClick={() => formatText('```\n', '\n```', '代码内容')}>
-                  <span className="font-mono text-xs">{'```'}</span>
-                </ToolbarButton>
-                <ToolbarButton title="引用" onClick={() => formatText('> ', '', '引用内容')}>
-                  <span className="text-sm">"</span>
-                </ToolbarButton>
-                <ToolbarButton title="无序列表" onClick={() => formatText('- ', '', '列表项')}>
-                  <span className="text-sm">•—</span>
-                </ToolbarButton>
-                <div className="ml-auto text-xs text-gray-400 hidden md:block">
-                  Ctrl+Enter 发送
+            {isEditorExpanded ? (
+              /* ── 展开态：工具栏 + textarea ── */
+              <div className="border border-blue-400 rounded-lg transition-colors">
+                {/* 工具栏 */}
+                <div className="flex items-center gap-0.5 px-2 py-1 border-b border-gray-200">
+                  <ToolbarButton title="粗体 (Ctrl+B)" onClick={() => formatText('**', '**', '粗体文字')}>
+                    <span className="font-bold text-sm">B</span>
+                  </ToolbarButton>
+                  <ToolbarButton title="斜体 (Ctrl+I)" onClick={() => formatText('*', '*', '斜体文字')}>
+                    <span className="italic text-sm">I</span>
+                  </ToolbarButton>
+                  <ToolbarButton title="行内代码" onClick={() => formatText('`', '`', 'code')}>
+                    <span className="font-mono text-xs">{'<>'}</span>
+                  </ToolbarButton>
+                  <div className="w-px h-4 bg-gray-200 mx-1" />
+                  <ToolbarButton title="代码块" onClick={() => formatText('```\n', '\n```', '代码内容')}>
+                    <span className="font-mono text-xs">{'```'}</span>
+                  </ToolbarButton>
+                  <ToolbarButton title="引用" onClick={() => formatText('> ', '', '引用内容')}>
+                    <span className="text-sm">"</span>
+                  </ToolbarButton>
+                  <ToolbarButton title="无序列表" onClick={() => formatText('- ', '', '列表项')}>
+                    <span className="text-sm">•—</span>
+                  </ToolbarButton>
+                  {/* 收起按钮 */}
+                  <button
+                    type="button"
+                    title="收起"
+                    onClick={() => {
+                      setIsEditorExpanded(false)
+                      requestAnimationFrame(() => inputRef.current?.focus())
+                    }}
+                    className="ml-auto p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 9L4 4m0 0h5m-5 0v5M15 9l5-5m0 0h-5m5 0v5M9 15l-5 5m0 0h5m-5 0v-5M15 15l5 5m0 0h-5m5 0v-5" />
+                    </svg>
+                  </button>
                 </div>
+                {/* 编辑区 */}
+                <form onSubmit={handleSubmit} className="flex gap-2 p-2">
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => {
+                      setInput(e.target.value)
+                      e.target.style.height = 'auto'
+                      e.target.style.height = `${e.target.scrollHeight}px`
+                    }}
+                    onKeyDown={(e) => {
+                      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                        e.preventDefault()
+                        handleSubmit(e as unknown as React.FormEvent)
+                      }
+                      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+                        e.preventDefault()
+                        formatText('**', '**', '粗体文字')
+                      }
+                      if ((e.metaKey || e.ctrlKey) && e.key === 'i') {
+                        e.preventDefault()
+                        formatText('*', '*', '斜体文字')
+                      }
+                    }}
+                    placeholder="输入消息，支持 Markdown 格式..."
+                    rows={3}
+                    className="flex-1 resize-none focus:outline-none text-sm md:text-base min-w-0 max-h-64 leading-relaxed"
+                    disabled={isLoading}
+                    autoFocus
+                  />
+                  <button
+                    type="submit"
+                    disabled={isLoading || !input.trim()}
+                    className="self-end px-4 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap text-sm md:text-base shrink-0"
+                  >
+                    {isLoading ? '...' : '发送'}
+                  </button>
+                </form>
               </div>
-
-              {/* 编辑区 */}
-              <form onSubmit={handleSubmit} className="flex gap-2 p-2">
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => {
-                    setInput(e.target.value)
-                    e.target.style.height = 'auto'
-                    e.target.style.height = `${e.target.scrollHeight}px`
-                  }}
-                  onKeyDown={(e) => {
-                    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-                      e.preventDefault()
-                      handleSubmit(e as unknown as React.FormEvent)
-                    }
-                    if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
-                      e.preventDefault()
-                      formatText('**', '**', '粗体文字')
-                    }
-                    if ((e.metaKey || e.ctrlKey) && e.key === 'i') {
-                      e.preventDefault()
-                      formatText('*', '*', '斜体文字')
-                    }
-                  }}
-                  placeholder="输入消息，支持 Markdown 格式..."
-                  rows={1}
-                  className="flex-1 resize-none focus:outline-none text-sm md:text-base min-w-0 max-h-48 leading-relaxed"
-                  disabled={isLoading}
-                />
-                <button
-                  type="submit"
-                  disabled={isLoading || !input.trim()}
-                  className="self-end px-4 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap text-sm md:text-base shrink-0"
-                >
-                  {isLoading ? '...' : '发送'}
-                </button>
+            ) : (
+              /* ── 收起态：单行 input + 展开图标 ── */
+              <form onSubmit={handleSubmit}>
+                <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 focus-within:border-blue-500 transition-colors">
+                  <input
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        handleSubmit(e as unknown as React.FormEvent)
+                      }
+                    }}
+                    placeholder="输入消息，支持 Markdown 格式..."
+                    className="flex-1 focus:outline-none text-sm md:text-base min-w-0 bg-transparent"
+                    disabled={isLoading}
+                  />
+                  {/* 展开按钮 */}
+                  <button
+                    type="button"
+                    title="展开编辑器"
+                    onClick={() => {
+                      setIsEditorExpanded(true)
+                    }}
+                    className="shrink-0 p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5M20 8V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    </svg>
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLoading || !input.trim()}
+                    className="shrink-0 px-4 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm whitespace-nowrap"
+                  >
+                    {isLoading ? '...' : '发送'}
+                  </button>
+                </div>
               </form>
-            </div>
+            )}
           </footer>
         </div>
       </div>
