@@ -75,7 +75,7 @@ export type AgentListResponseBody = {
 /**
  * Provider 标识（与后端实现一致）。
  */
-export type ProviderId = "openai" | "volcengine";
+export type ProviderId = "deepseek" | "openai" | "volcengine";
 
 /**
  * GET /healthcheck 的响应体。

@@ -1,6 +1,8 @@
 import { createOpenAI } from '@ai-sdk/openai'
 
 export type ProvidersEnv = {
+  DEEPSEEK_API_KEY?: string
+  DEEPSEEK_BASE_URL?: string
   OPENAI_API_KEY?: string
   VOLCENGINE_API_KEY?: string
   VOLC_API_KEY?: string
@@ -8,11 +10,19 @@ export type ProvidersEnv = {
 }
 
 type Providers = {
+  deepseek: () => ReturnType<typeof createOpenAI>
   openai: () => ReturnType<typeof createOpenAI>
   volcengine: () => ReturnType<typeof createOpenAI>
 }
 
-const cachedProvidersByKey = new Map<string, { openai?: ReturnType<typeof createOpenAI>; volcengine?: ReturnType<typeof createOpenAI> }>()
+const cachedProvidersByKey = new Map<
+  string,
+  {
+    deepseek?: ReturnType<typeof createOpenAI>
+    openai?: ReturnType<typeof createOpenAI>
+    volcengine?: ReturnType<typeof createOpenAI>
+  }
+>()
 
 function readEnv(env: ProvidersEnv, key: keyof ProvidersEnv & string): string | undefined {
   const fromEnv = env[key]
@@ -28,6 +38,8 @@ function requireEnv(env: ProvidersEnv, key: keyof ProvidersEnv & string): string
     let message = `Missing environment variable: ${key}`
     if (key === 'OPENAI_API_KEY') {
       message = 'OpenAI API Key 未配置。请在环境变量中设置 OPENAI_API_KEY。'
+    } else if (key === 'DEEPSEEK_API_KEY') {
+      message = 'DeepSeek API Key 未配置。请在环境变量中设置 DEEPSEEK_API_KEY。'
     } else if (key === 'VOLCENGINE_API_KEY' || key === 'VOLC_API_KEY') {
       message = '豆包 API Key 未配置。请在环境变量中设置 VOLCENGINE_API_KEY 或 VOLC_API_KEY。'
     }
@@ -37,10 +49,15 @@ function requireEnv(env: ProvidersEnv, key: keyof ProvidersEnv & string): string
 }
 
 export function checkProviderConfiguration(env: ProvidersEnv): {
+  deepseek: { configured: boolean; error?: string }
   volcengine: { configured: boolean; error?: string }
   openai: { configured: boolean; error?: string }
 } {
   return {
+    deepseek: {
+      configured: !!readEnv(env, 'DEEPSEEK_API_KEY'),
+      error: readEnv(env, 'DEEPSEEK_API_KEY') ? undefined : 'DeepSeek API Key 未配置',
+    },
     volcengine: {
       configured: !!(readEnv(env, 'VOLCENGINE_API_KEY') || readEnv(env, 'VOLC_API_KEY')),
       error: (readEnv(env, 'VOLCENGINE_API_KEY') || readEnv(env, 'VOLC_API_KEY')) ? undefined : '豆包 API Key 未配置',
@@ -53,15 +70,26 @@ export function checkProviderConfiguration(env: ProvidersEnv): {
 }
 
 export function getProviders(env: ProvidersEnv): Providers {
+  const deepseekBaseURL = readEnv(env, 'DEEPSEEK_BASE_URL') || 'https://api.deepseek.com/v1'
+  const deepseekKey = readEnv(env, 'DEEPSEEK_API_KEY') || ''
   const openaiKey = readEnv(env, 'OPENAI_API_KEY') || ''
   const volcBaseURL = readEnv(env, 'VOLCENGINE_BASE_URL') || 'https://ark.cn-beijing.volces.com/api/v3'
   const volcKey = readEnv(env, 'VOLCENGINE_API_KEY') || readEnv(env, 'VOLC_API_KEY') || ''
-  const cacheKey = `${openaiKey}::${volcBaseURL}::${volcKey}`
+  const cacheKey = `${deepseekBaseURL}::${deepseekKey}::${openaiKey}::${volcBaseURL}::${volcKey}`
   const cached = cachedProvidersByKey.get(cacheKey)
   const cacheEntry = cached ?? {}
   if (!cached) cachedProvidersByKey.set(cacheKey, cacheEntry)
 
   return {
+    deepseek: () => {
+      if (!cacheEntry.deepseek) {
+        cacheEntry.deepseek = createOpenAI({
+          baseURL: deepseekBaseURL,
+          apiKey: requireEnv(env, 'DEEPSEEK_API_KEY'),
+        })
+      }
+      return cacheEntry.deepseek
+    },
     openai: () => {
       if (!cacheEntry.openai) {
         cacheEntry.openai = createOpenAI({ apiKey: requireEnv(env, 'OPENAI_API_KEY') })

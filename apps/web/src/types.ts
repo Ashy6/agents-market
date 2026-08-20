@@ -30,6 +30,10 @@ export interface AgentListResponse {
 export interface HealthcheckResponse {
   status: 'ok' | 'error'
   providers: {
+    deepseek: {
+      configured: boolean
+      models: string[]
+    }
     volcengine: {
       configured: boolean
       models: string[]

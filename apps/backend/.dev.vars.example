@@ -28,13 +28,18 @@ VOLCENGINE_EMBEDDING_MODEL=ep-20260106001810-*****
 # Doubao Pro 32k - 中文专家模型，擅长长文本处理
 VOLCENGINE_MODEL_DOUBAO_PRO=ep-20260109003610-*****
 
+# DeepSeek（独立提供商）配置
+# 默认走官方 OpenAI 兼容接口；如果你用第三方托管的 DeepSeek，也可以把 baseURL 改成你自己的地址
+DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxx
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+
 # DeepSeek R1 - 超强推理模型，擅长数学、代码、逻辑推理
-# 注意：deepseek-r1-math / deepseek-r1-code / deepseek-r1-logic 会共享这个 endpoint
-VOLCENGINE_MODEL_DEEPSEEK_R1=ep-20260110052019-*****
+# 注意：deepseek-r1-math / deepseek-r1-code / deepseek-r1-logic 会共享这个模型名
+DEEPSEEK_MODEL_R1=deepseek-reasoner
 
 # DeepSeek V3 - 通用平衡模型，适合日常问答和 Agent 任务
-# 注意：deepseek-v3-general / deepseek-v3-writer / deepseek-v3-agent 会共享这个 endpoint
-VOLCENGINE_MODEL_DEEPSEEK_V3=ep-20260110052213-*****
+# 注意：deepseek-v3-general / deepseek-v3-writer / deepseek-v3-agent 会共享这个模型名
+DEEPSEEK_MODEL_V3=deepseek-chat
 
 # Doubao Seedream 4.5 - 图像生成多模态模型，支持文生图、图生图、组图输出
 # 注意：doubao-seedream-artist / doubao-seedream-designer 会共享这个 endpoint

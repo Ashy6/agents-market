@@ -1,4 +1,4 @@
-export type ProviderId = "openai" | "volcengine";
+export type ProviderId = "deepseek" | "openai" | "volcengine";
 
 export enum ModelIdEnum {
   DoubaoPro32k = "doubao-pro-32k",
@@ -72,7 +72,7 @@ export const modelList = [
   {
     id: 2,
     modelId: ModelIdEnum.DeepSeekR1Math,
-    provider: "volcengine",
+    provider: "deepseek",
     displayName: "DeepSeek R1 - 数学",
     summary: "强推理，适合数学推导、证明、严谨步骤与验算。",
     recommendedFor: ["数学题", "公式推导", "证明", "严谨解题步骤"] as const,
@@ -87,7 +87,7 @@ export const modelList = [
   {
     id: 3,
     modelId: ModelIdEnum.DeepSeekR1Code,
-    provider: "volcengine",
+    provider: "deepseek",
     displayName: "DeepSeek R1 - 代码",
     summary: "强推理，适合阅读工程代码、定位 bug、给出重构与性能建议。",
     recommendedFor: ["代码审查", "Bug 定位", "重构建议", "性能优化"] as const,
@@ -102,10 +102,15 @@ export const modelList = [
   {
     id: 4,
     modelId: ModelIdEnum.DeepSeekR1Logic,
-    provider: "volcengine",
+    provider: "deepseek",
     displayName: "DeepSeek R1 - 推理",
     summary: "强逻辑推理，适合论证、拆解复杂问题、识别漏洞与给出结论。",
-    recommendedFor: ["逻辑推演", "论证与反驳", "复杂问题拆解", "决策分析"] as const,
+    recommendedFor: [
+      "逻辑推演",
+      "论证与反驳",
+      "复杂问题拆解",
+      "决策分析",
+    ] as const,
     capabilities: { streaming: true, tools: true, vision: false, json: true },
     defaultAgent: {
       name: "逻辑推理助手",
@@ -117,7 +122,7 @@ export const modelList = [
   {
     id: 5,
     modelId: ModelIdEnum.DeepSeekV3General,
-    provider: "volcengine",
+    provider: "deepseek",
     displayName: "DeepSeek V3 - 通用",
     summary: "通用均衡，适合日常问答、信息检索式对话与一般任务咨询。",
     recommendedFor: ["日常问答", "知识解释", "轻量写作", "头脑风暴"] as const,
@@ -132,7 +137,7 @@ export const modelList = [
   {
     id: 6,
     modelId: ModelIdEnum.DeepSeekV3Writer,
-    provider: "volcengine",
+    provider: "deepseek",
     displayName: "DeepSeek V3 - 写作",
     summary: "偏表达与文风，适合中文写作、润色、扩写与改写。",
     recommendedFor: ["文章润色", "文案写作", "扩写改写", "风格调整"] as const,
@@ -147,10 +152,15 @@ export const modelList = [
   {
     id: 7,
     modelId: ModelIdEnum.DeepSeekV3Agent,
-    provider: "volcengine",
+    provider: "deepseek",
     displayName: "DeepSeek V3 - Agent",
     summary: "偏任务执行，适合任务拆解、多步执行、工具协作式对话。",
-    recommendedFor: ["任务规划", "步骤化执行", "工作流拆解", "多轮协作"] as const,
+    recommendedFor: [
+      "任务规划",
+      "步骤化执行",
+      "工作流拆解",
+      "多轮协作",
+    ] as const,
     capabilities: { streaming: true, tools: true, vision: false, json: true },
     defaultAgent: {
       name: "智能Agent助手",
@@ -195,7 +205,12 @@ export const modelList = [
     provider: "openai",
     displayName: "GPT-4o",
     summary: "高质量多模态通用，适合复杂问题与视觉输入。",
-    recommendedFor: ["复杂问答", "多模态理解", "高质量输出", "严谨表达"] as const,
+    recommendedFor: [
+      "复杂问答",
+      "多模态理解",
+      "高质量输出",
+      "严谨表达",
+    ] as const,
     capabilities: { streaming: true, tools: true, vision: true, json: true },
     defaultAgent: {
       name: "英语辅导老师",
@@ -224,6 +239,10 @@ export type ModelCatalogItem = {
   modelId: ModelId;
   provider: ProviderId;
   model?: string;
+  deepseek?: {
+    modelEnv?: string;
+    defaultModel: string;
+  };
   volcengine?: {
     endpointIdEnv: string;
   };
@@ -237,33 +256,51 @@ export const MODEL_LIST = [
   },
   {
     modelId: ModelIdEnum.DeepSeekR1Math,
-    provider: "volcengine",
-    volcengine: { endpointIdEnv: "VOLCENGINE_MODEL_DEEPSEEK_R1" },
+    provider: "deepseek",
+    deepseek: {
+      modelEnv: "DEEPSEEK_MODEL_R1",
+      defaultModel: "deepseek-reasoner",
+    },
   },
   {
     modelId: ModelIdEnum.DeepSeekR1Code,
-    provider: "volcengine",
-    volcengine: { endpointIdEnv: "VOLCENGINE_MODEL_DEEPSEEK_R1" },
+    provider: "deepseek",
+    deepseek: {
+      modelEnv: "DEEPSEEK_MODEL_R1",
+      defaultModel: "deepseek-reasoner",
+    },
   },
   {
     modelId: ModelIdEnum.DeepSeekR1Logic,
-    provider: "volcengine",
-    volcengine: { endpointIdEnv: "VOLCENGINE_MODEL_DEEPSEEK_R1" },
+    provider: "deepseek",
+    deepseek: {
+      modelEnv: "DEEPSEEK_MODEL_R1",
+      defaultModel: "deepseek-reasoner",
+    },
   },
   {
     modelId: ModelIdEnum.DeepSeekV3General,
-    provider: "volcengine",
-    volcengine: { endpointIdEnv: "VOLCENGINE_MODEL_DEEPSEEK_V3" },
+    provider: "deepseek",
+    deepseek: {
+      modelEnv: "DEEPSEEK_MODEL_V3",
+      defaultModel: "deepseek-chat",
+    },
   },
   {
     modelId: ModelIdEnum.DeepSeekV3Writer,
-    provider: "volcengine",
-    volcengine: { endpointIdEnv: "VOLCENGINE_MODEL_DEEPSEEK_V3" },
+    provider: "deepseek",
+    deepseek: {
+      modelEnv: "DEEPSEEK_MODEL_V3",
+      defaultModel: "deepseek-chat",
+    },
   },
   {
     modelId: ModelIdEnum.DeepSeekV3Agent,
-    provider: "volcengine",
-    volcengine: { endpointIdEnv: "VOLCENGINE_MODEL_DEEPSEEK_V3" },
+    provider: "deepseek",
+    deepseek: {
+      modelEnv: "DEEPSEEK_MODEL_V3",
+      defaultModel: "deepseek-chat",
+    },
   },
   {
     modelId: ModelIdEnum.DoubaoSeedreamArtist,

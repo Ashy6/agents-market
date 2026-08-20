@@ -30,7 +30,7 @@ type ModelCapabilities = {
 type ModelListItem = {
   id: number
   modelId: string
-  provider: 'openai' | 'volcengine'
+  provider: 'deepseek' | 'openai' | 'volcengine'
   displayName: string
   summary: string
   recommendedFor: readonly string[]

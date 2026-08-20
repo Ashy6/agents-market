@@ -1,8 +1,12 @@
 import { createOpenAI } from '@ai-sdk/openai'
 
-export type ModelProvider = 'openai' | 'volcengine'
+export type ModelProvider = 'deepseek' | 'openai' | 'volcengine'
 
 export type Env = {
+  DEEPSEEK_API_KEY?: string
+  DEEPSEEK_BASE_URL?: string
+  DEEPSEEK_MODEL_R1?: string
+  DEEPSEEK_MODEL_V3?: string
   OPENAI_API_KEY?: string
   OPENAI_MODEL_ID?: string
   VOLCENGINE_BASE_URL?: string
@@ -38,6 +42,7 @@ export function getDefaultModelId(provider: ModelProvider, env: Env): string {
 }
 
 const cachedOpenAIByKey = new Map<string, ReturnType<typeof createOpenAI>>()
+const cachedDeepSeekByKey = new Map<string, ReturnType<typeof createOpenAI>>()
 const cachedVolcengineByKey = new Map<string, ReturnType<typeof createOpenAI>>()
 
 function getOpenAIClient(env: Env) {
@@ -46,6 +51,17 @@ function getOpenAIClient(env: Env) {
   if (cached) return cached
   const client = createOpenAI({ apiKey })
   cachedOpenAIByKey.set(apiKey, client)
+  return client
+}
+
+function getDeepSeekClient(env: Env) {
+  const baseURL = env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1'
+  const apiKey = requireEnv(env, 'DEEPSEEK_API_KEY')
+  const cacheKey = `${baseURL}::${apiKey}`
+  const cached = cachedDeepSeekByKey.get(cacheKey)
+  if (cached) return cached
+  const client = createOpenAI({ baseURL, apiKey })
+  cachedDeepSeekByKey.set(cacheKey, client)
   return client
 }
 
@@ -62,6 +78,8 @@ function getVolcengineClient(env: Env) {
 
 export function getModel({ provider, modelId, env }: GetModelParams) {
   switch (provider) {
+    case 'deepseek':
+      return getDeepSeekClient(env).chat(modelId)
     case 'openai':
       return getOpenAIClient(env)(modelId)
     case 'volcengine':

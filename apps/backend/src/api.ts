@@ -163,6 +163,10 @@ export async function handleHealthcheck(
     const providerStatus = checkProviderConfiguration(env);
 
     // Get available models for each provider
+    const deepseekModels = providerStatus.deepseek.configured
+      ? MODEL_LIST.filter((m) => m.provider === "deepseek").map((m) => m.modelId)
+      : [];
+
     const volcengineModels = providerStatus.volcengine.configured
       ? MODEL_LIST.filter((m) => m.provider === "volcengine").map((m) => m.modelId)
       : [];
@@ -174,6 +178,10 @@ export async function handleHealthcheck(
     const payload = {
       status: "ok" as const,
       providers: {
+        deepseek: {
+          configured: providerStatus.deepseek.configured,
+          models: deepseekModels,
+        },
         volcengine: {
           configured: providerStatus.volcengine.configured,
           models: volcengineModels,
@@ -194,6 +202,7 @@ export async function handleHealthcheck(
         status: "error" as const,
         message,
         providers: {
+          deepseek: { configured: false, models: [] },
           volcengine: { configured: false, models: [] },
           openai: { configured: false, models: [] },
         },
