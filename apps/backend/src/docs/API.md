@@ -12,11 +12,11 @@
 
 线上（当前部署）：
 
-- `https://market-api.singulay.online/api`
+- `https://market-api.rowlandw3ai.shop/api`
 
 你给到的“完整 Chat 接口地址”为：
 
-- `https://market-api.singulay.online/api/chat`
+- `https://market-api.rowlandw3ai.shop/api/chat`
 
 兼容性说明：
 
@@ -44,7 +44,7 @@
 
 注意：
 
-- 如果你在浏览器里直接访问 `https://market-api.singulay.online/api/chat`（GET 请求），会得到 `404 {"error":"Not Found"}`，因为 `/chat` 只支持 `POST`。
+- 如果你在浏览器里直接访问 `https://market-api.rowlandw3ai.shop/api/chat`（GET 请求），会得到 `404 {"error":"Not Found"}`，因为 `/chat` 只支持 `POST`。
 
 ## GET /api/health
 
@@ -66,7 +66,7 @@
 ### curl
 
 ```bash
-curl -sS https://market-api.singulay.online/api/health
+curl -sS https://market-api.rowlandw3ai.shop/api/health
 ```
 
 ## GET /api/agents
@@ -120,7 +120,7 @@ export type AgentListResponseBody = {
 ### curl
 
 ```bash
-curl -sS https://market-api.singulay.online/api/agents | head -n 50
+curl -sS https://market-api.rowlandw3ai.shop/api/agents | head -n 50
 ```
 
 ## POST /api/agents
@@ -168,7 +168,7 @@ export type CreateAgentResponseBody = AgentListItem
 curl -sS \
   -H 'Content-Type: application/json' \
   -d '{"name":"自定义助手","modelId":"gpt-4o","systemPrompt":"你是一个专业助手","temperature":0.5}' \
-  https://market-api.singulay.online/api/agents
+  https://market-api.rowlandw3ai.shop/api/agents
 ```
 
 ## GET /api/models
@@ -215,7 +215,7 @@ export type ModelListResponseBody = {
 ### curl
 
 ```bash
-curl -sS https://market-api.singulay.online/api/models | head -n 80
+curl -sS https://market-api.rowlandw3ai.shop/api/models | head -n 80
 ```
 
 ## GET /api/healthcheck
@@ -270,7 +270,7 @@ export type HealthcheckResponseBody =
 ### curl
 
 ```bash
-curl -sS https://market-api.singulay.online/api/healthcheck
+curl -sS https://market-api.rowlandw3ai.shop/api/healthcheck
 ```
 
 ## POST /api/chat
@@ -341,7 +341,7 @@ import { DefaultChatTransport, type UIMessage } from 'ai'
 
 const chat = new Chat<UIMessage>({
   transport: new DefaultChatTransport({
-    api: 'https://market-api.singulay.online/api/chat',
+    api: 'https://market-api.rowlandw3ai.shop/api/chat',
   }),
   messages: [],
 })
@@ -359,7 +359,7 @@ await chat.sendMessage({
 import { createMarketApiClient } from './api'
 
 const api = createMarketApiClient({
-  apiBaseUrl: 'https://market-api.singulay.online/api',
+  apiBaseUrl: 'https://market-api.rowlandw3ai.shop/api',
 })
 
 const agents = await api.agents()
@@ -384,5 +384,5 @@ console.log(res.headers.get('content-type'))
 curl -N \
   -H 'Content-Type: application/json' \
   -d '{"messages":[{"id":"1","role":"user","parts":[{"type":"text","text":"你好"}]}]}' \
-  https://market-api.singulay.online/api/chat
+  https://market-api.rowlandw3ai.shop/api/chat
 ```

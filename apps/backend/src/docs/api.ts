@@ -15,11 +15,11 @@ export type MarketApiClientOptions = {
   /**
    * API 基础地址（不含结尾路径）。
    *
-   * 默认值：`https://market-api.singulay.online/api`
+   * 默认值：`https://market-api.rowlandw3ai.shop/api`
    *
    * 例：
    * - 本地：`http://localhost:3300/api`
-   * - 线上：`https://market-api.singulay.online/api`
+   * - 线上：`https://market-api.rowlandw3ai.shop/api`
    */
   apiBaseUrl?: string;
   /**
@@ -156,7 +156,7 @@ async function readJsonOrThrow<T>(res: Response): Promise<T> {
     throw new Error(
       typeof error === "string" && error
         ? error
-        : `HTTP ${res.status} ${res.statusText}`
+        : `HTTP ${res.status} ${res.statusText}`,
     );
   }
   return json as T;
@@ -172,7 +172,7 @@ async function readJsonOrThrow<T>(res: Response): Promise<T> {
 export function createMarketApiClient(options: MarketApiClientOptions = {}) {
   const fetchImpl = options.fetchImpl ?? fetch;
   const apiBaseUrl =
-    options.apiBaseUrl ?? "https://market-api.singulay.online/api";
+    options.apiBaseUrl ?? "https://market-api.rowlandw3ai.shop/api";
   const baseHeaders = options.headers;
 
   /**
@@ -193,7 +193,7 @@ export function createMarketApiClient(options: MarketApiClientOptions = {}) {
   const postJson = async (
     path: string,
     body: unknown,
-    init?: RequestInit
+    init?: RequestInit,
   ): Promise<Response> => {
     const res = await fetchImpl(joinUrl(apiBaseUrl, path), {
       ...init,

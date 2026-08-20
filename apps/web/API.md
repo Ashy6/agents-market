@@ -7,7 +7,7 @@
 在 Vite 环境变量里设置：
 
 ```
-VITE_BACKEND_CHAT_API=https://market-api.singulay.online/api/chat
+VITE_BACKEND_CHAT_API=https://market-api.rowlandw3ai.shop/api/chat
 ```
 
 ## 代码示例

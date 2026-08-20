@@ -1,9 +1,10 @@
 name = "agents-market-backend"
 main = "src/index.ts"
 compatibility_date = "2025-07-18"
+workers_dev = true
  
 compatibility_flags = ["nodejs_compat"]
 
 routes = [
-  { pattern = "market-api.singulay.online/*", zone_name = "singulay.online" }
+  { pattern = "market-api.rowlandw3ai.shop/*", zone_name = "rowlandw3ai.shop" }
 ]
